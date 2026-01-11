@@ -85,6 +85,24 @@ class ApiClient {
     });
   }
 
+  // Wishlist Sharing
+  async getWishlistShares(wishlistId: string) {
+    return this.request<{ success: boolean; data: { groups: Array<{ id: string; name: string }>; users: Array<{ id: string; name: string; email: string }>; shareLink: { slug: string; url: string } | null } }>(`/wishlists/${wishlistId}/shares`);
+  }
+
+  async shareWishlistWithGroup(wishlistId: string, groupId: string) {
+    return this.request<{ success: boolean }>(`/wishlists/${wishlistId}/share/group`, {
+      method: 'POST',
+      body: JSON.stringify({ groupId }),
+    });
+  }
+
+  async unshareWishlistFromGroup(wishlistId: string, groupId: string) {
+    return this.request<{ success: boolean }>(`/wishlists/${wishlistId}/share/group/${groupId}`, {
+      method: 'DELETE',
+    });
+  }
+
   // Wishlist Items
   async getWishlistItems(wishlistId: string) {
     return this.request<{ data: import('@/types').WishlistItem[] }>(
@@ -127,15 +145,15 @@ class ApiClient {
 
   // Groups
   async getGroups() {
-    return this.request<{ data: import('@/types').Group[] }>('/groups');
+    return this.request<{ success: boolean; data: { groups: import('@/types').Group[] } }>('/groups');
   }
 
   async getGroup(id: string) {
-    return this.request<import('@/types').Group>(`/groups/${id}`);
+    return this.request<{ success: boolean; data: import('@/types').Group }>(`/groups/${id}`);
   }
 
   async createGroup(data: import('@/types').CreateGroupInput) {
-    return this.request<import('@/types').Group>('/groups', {
+    return this.request<{ success: boolean; data: import('@/types').Group }>('/groups', {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -154,11 +172,30 @@ class ApiClient {
     });
   }
 
-  async inviteToGroup(groupId: string, email: string) {
-    return this.request<{ inviteUrl: string }>(`/groups/${groupId}/invite`, {
+  async generateInviteCode(groupId: string) {
+    return this.request<{ success: boolean; data: { inviteCode: string } }>(`/groups/${groupId}/invite-code`, {
       method: 'POST',
-      body: JSON.stringify({ email }),
     });
+  }
+
+  async joinGroup(code: string) {
+    return this.request<{ success: boolean; data: { groupId: string; groupName: string; alreadyMember: boolean } }>(`/groups/join/${code}`, {
+      method: 'POST',
+    });
+  }
+
+  async getGroupMembers(groupId: string) {
+    return this.request<{ success: boolean; data: { members: Array<{ id: string; name: string; email: string; avatarUrl?: string; role: string; joinedAt: string }> } }>(`/groups/${groupId}/members`);
+  }
+
+  async removeGroupMember(groupId: string, userId: string) {
+    return this.request<void>(`/groups/${groupId}/members/${userId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async getGroupWishlists(groupId: string) {
+    return this.request<{ success: boolean; data: { wishlists: Array<{ id: string; title: string; type: string; owner: { id: string; name: string; avatarUrl?: string }; itemCount: number; sharedAt: string }> } }>(`/groups/${groupId}/wishlists`);
   }
 
   // Exchanges

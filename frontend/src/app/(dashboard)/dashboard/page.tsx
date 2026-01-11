@@ -6,11 +6,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useWishlists } from '@/hooks/use-wishlists';
+import { useGroups } from '@/hooks/use-groups';
 
 export default function DashboardPage() {
   const { data: wishlists, isLoading: wishlistsLoading } = useWishlists();
+  const { data: groups, isLoading: groupsLoading } = useGroups();
 
   const wishlistCount = wishlists?.length ?? 0;
+  const groupCount = groups?.length ?? 0;
   const recentWishlists = wishlists?.slice(0, 3) ?? [];
 
   return (
@@ -54,7 +57,11 @@ export default function DashboardPage() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">0</div>
+            {groupsLoading ? (
+              <Skeleton className="h-8 w-16" />
+            ) : (
+              <div className="text-2xl font-bold">{groupCount}</div>
+            )}
             <p className="text-xs text-muted-foreground">
               active groups
             </p>

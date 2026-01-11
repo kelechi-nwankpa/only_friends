@@ -82,12 +82,25 @@ export interface Group {
   id: string;
   name: string;
   description?: string;
-  createdById: string;
+  avatarUrl?: string;
+  inviteCode?: string;
+  createdById?: string;
   createdBy?: User;
-  members?: GroupMember[];
+  members?: Array<{
+    id: string;
+    name?: string;
+    email?: string;
+    avatarUrl?: string;
+    role: string;
+    joinedAt: string;
+  }>;
   wishlists?: GroupWishlist[];
-  createdAt: string;
-  updatedAt: string;
+  createdAt?: string;
+  updatedAt?: string;
+  memberCount?: number;
+  myRole?: string;
+  role?: string;
+  joinedAt?: string;
   _count?: {
     members: number;
     wishlists: number;

@@ -14,7 +14,7 @@ export function useGroups() {
       const token = await getToken();
       api.setToken(token);
       const response = await api.getGroups();
-      return response.data;
+      return response.data.groups;
     },
   });
 }
@@ -27,7 +27,8 @@ export function useGroup(id: string) {
     queryFn: async () => {
       const token = await getToken();
       api.setToken(token);
-      return api.getGroup(id);
+      const response = await api.getGroup(id);
+      return response.data;
     },
     enabled: !!id,
   });
@@ -41,7 +42,8 @@ export function useCreateGroup() {
     mutationFn: async (data: CreateGroupInput) => {
       const token = await getToken();
       api.setToken(token);
-      return api.createGroup(data);
+      const response = await api.createGroup(data);
+      return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['groups'] });
@@ -82,14 +84,83 @@ export function useDeleteGroup() {
   });
 }
 
-export function useInviteToGroup() {
+export function useGenerateInviteCode() {
+  const queryClient = useQueryClient();
   const { getToken } = useAuth();
 
   return useMutation({
-    mutationFn: async ({ groupId, email }: { groupId: string; email: string }) => {
+    mutationFn: async (groupId: string) => {
       const token = await getToken();
       api.setToken(token);
-      return api.inviteToGroup(groupId, email);
+      const response = await api.generateInviteCode(groupId);
+      return response.data;
     },
+    onSuccess: (_, groupId) => {
+      queryClient.invalidateQueries({ queryKey: ['groups', groupId] });
+    },
+  });
+}
+
+export function useJoinGroup() {
+  const queryClient = useQueryClient();
+  const { getToken } = useAuth();
+
+  return useMutation({
+    mutationFn: async (code: string) => {
+      const token = await getToken();
+      api.setToken(token);
+      const response = await api.joinGroup(code);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['groups'] });
+    },
+  });
+}
+
+export function useGroupMembers(groupId: string) {
+  const { getToken } = useAuth();
+
+  return useQuery({
+    queryKey: ['groups', groupId, 'members'],
+    queryFn: async () => {
+      const token = await getToken();
+      api.setToken(token);
+      const response = await api.getGroupMembers(groupId);
+      return response.data.members;
+    },
+    enabled: !!groupId,
+  });
+}
+
+export function useRemoveGroupMember() {
+  const queryClient = useQueryClient();
+  const { getToken } = useAuth();
+
+  return useMutation({
+    mutationFn: async ({ groupId, userId }: { groupId: string; userId: string }) => {
+      const token = await getToken();
+      api.setToken(token);
+      return api.removeGroupMember(groupId, userId);
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['groups', variables.groupId] });
+      queryClient.invalidateQueries({ queryKey: ['groups', variables.groupId, 'members'] });
+    },
+  });
+}
+
+export function useGroupWishlists(groupId: string) {
+  const { getToken } = useAuth();
+
+  return useQuery({
+    queryKey: ['groups', groupId, 'wishlists'],
+    queryFn: async () => {
+      const token = await getToken();
+      api.setToken(token);
+      const response = await api.getGroupWishlists(groupId);
+      return response.data.wishlists;
+    },
+    enabled: !!groupId,
   });
 }

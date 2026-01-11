@@ -2,13 +2,14 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, X, Users } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import {
   Select,
   SelectContent,
@@ -16,7 +17,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useCreateWishlist } from '@/hooks/use-wishlists';
+import { useCreateWishlist, useShareWithGroup } from '@/hooks/use-wishlists';
+import { useGroups } from '@/hooks/use-groups';
 import { useToast } from '@/components/ui/use-toast';
 
 const wishlistTypes = [
@@ -32,11 +34,27 @@ export default function NewListPage() {
   const router = useRouter();
   const { toast } = useToast();
   const createWishlist = useCreateWishlist();
+  const shareWithGroup = useShareWithGroup();
+  const { data: groups } = useGroups();
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [type, setType] = useState<'general' | 'birthday' | 'christmas' | 'wedding' | 'baby' | 'home'>('general');
   const [visibility, setVisibility] = useState<'private' | 'shared' | 'public'>('private');
+  const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
+
+  // Get selected groups for display
+  const selectedGroups = groups?.filter(g => selectedGroupIds.includes(g.id)) || [];
+  // Get available groups (not yet selected)
+  const availableGroups = groups?.filter(g => !selectedGroupIds.includes(g.id)) || [];
+
+  const handleAddGroup = (groupId: string) => {
+    setSelectedGroupIds(prev => [...prev, groupId]);
+  };
+
+  const handleRemoveGroup = (groupId: string) => {
+    setSelectedGroupIds(prev => prev.filter(id => id !== groupId));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,6 +75,15 @@ export default function NewListPage() {
         type,
         visibility,
       });
+
+      // Share with selected groups after creation
+      if (visibility === 'shared' && selectedGroupIds.length > 0) {
+        await Promise.all(
+          selectedGroupIds.map(groupId =>
+            shareWithGroup.mutateAsync({ wishlistId: wishlist.id, groupId })
+          )
+        );
+      }
 
       toast({
         title: 'Success',
@@ -150,6 +177,69 @@ export default function NewListPage() {
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Group sharing section - show when visibility is 'shared' */}
+            {visibility === 'shared' && (
+              <div className="space-y-3 p-4 border rounded-lg bg-muted/30">
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  <Label>Share with Groups</Label>
+                </div>
+
+                {/* Selected groups */}
+                {selectedGroups.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-sm text-muted-foreground">Will be shared with:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedGroups.map((group) => (
+                        <Badge key={group.id} variant="secondary" className="gap-1 pr-1">
+                          {group.name}
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveGroup(group.id)}
+                            className="ml-1 hover:bg-muted rounded-full p-0.5"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Add group selector */}
+                {availableGroups.length > 0 ? (
+                  <div className="space-y-2">
+                    <p className="text-sm text-muted-foreground">
+                      {selectedGroups.length > 0 ? 'Add another group:' : 'Select a group:'}
+                    </p>
+                    <Select onValueChange={handleAddGroup} value="">
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a group to share with" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableGroups.map((group) => (
+                          <SelectItem key={group.id} value={group.id}>
+                            {group.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                ) : groups?.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    You&apos;re not a member of any groups yet.{' '}
+                    <Link href="/groups" className="text-primary hover:underline">
+                      Create or join a group
+                    </Link>
+                  </p>
+                ) : selectedGroups.length > 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    All your groups are selected
+                  </p>
+                ) : null}
+              </div>
+            )}
 
             <div className="flex gap-4 justify-end">
               <Link href="/lists">

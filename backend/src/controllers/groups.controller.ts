@@ -2,7 +2,7 @@ import type { RequestHandler } from 'express';
 import { prisma } from '../config/database.js';
 import type { AuthenticatedRequest } from '../types/auth.types.js';
 import { AppError } from '../utils/errors.js';
-import { generateInviteCode } from '../utils/crypto.js';
+import { generateInviteCode as generateCode } from '../utils/crypto.js';
 import type { CreateGroupInput, UpdateGroupInput } from '../validators/group.validator.js';
 
 /**
@@ -55,7 +55,7 @@ export const createGroup: RequestHandler = async (req, res, next) => {
         name: input.name,
         description: input.description,
         createdBy: user.id,
-        inviteCode: generateInviteCode(),
+        inviteCode: generateCode(),
         members: {
           create: {
             userId: user.id,
@@ -202,7 +202,7 @@ export const generateInviteCode: RequestHandler = async (req, res, next) => {
       throw AppError.forbidden('Only admins can regenerate invite codes');
     }
 
-    const newCode = generateInviteCode();
+    const newCode = generateCode();
 
     await prisma.group.update({
       where: { id },
@@ -240,7 +240,16 @@ export const joinGroup: RequestHandler = async (req, res, next) => {
     });
 
     if (existing) {
-      throw AppError.conflict('You are already a member of this group');
+      // Already a member - return success with alreadyMember flag
+      res.json({
+        success: true,
+        data: {
+          groupId: group.id,
+          groupName: group.name,
+          alreadyMember: true,
+        },
+      });
+      return;
     }
 
     await prisma.groupMember.create({
@@ -256,6 +265,7 @@ export const joinGroup: RequestHandler = async (req, res, next) => {
       data: {
         groupId: group.id,
         groupName: group.name,
+        alreadyMember: false,
       },
     });
   } catch (error) {

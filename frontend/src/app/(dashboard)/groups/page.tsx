@@ -1,16 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { Plus, Users, MoreHorizontal, Settings, Trash2 } from 'lucide-react';
+import { Plus, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useGroups } from '@/hooks/use-groups';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -51,8 +44,8 @@ export default function GroupsPage() {
       ) : groups && groups.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {groups.map((group) => (
-            <Card key={group.id} className="group relative">
-              <Link href={`/groups/${group.id}`}>
+            <Link key={group.id} href={`/groups/${group.id}`}>
+              <Card className="hover:bg-muted/50 transition-colors cursor-pointer">
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-lg">{group.name}</CardTitle>
@@ -62,48 +55,15 @@ export default function GroupsPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex items-center justify-between">
-                    <div className="flex -space-x-2">
-                      {group.members?.slice(0, 5).map((member) => (
-                        <Avatar key={member.id} className="h-8 w-8 border-2 border-background">
-                          <AvatarImage src={member.user?.imageUrl} />
-                          <AvatarFallback>
-                            {member.user?.firstName?.[0] || member.user?.email?.[0] || '?'}
-                          </AvatarFallback>
-                        </Avatar>
-                      ))}
-                      {(group._count?.members || 0) > 5 && (
-                        <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center text-xs border-2 border-background">
-                          +{(group._count?.members || 0) - 5}
-                        </div>
-                      )}
-                    </div>
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm text-muted-foreground">
-                      {group._count?.members || 0} members
+                      {group.memberCount || 0} {(group.memberCount || 0) === 1 ? 'member' : 'members'}
                     </span>
                   </div>
                 </CardContent>
-              </Link>
-              <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem>
-                      <Settings className="h-4 w-4 mr-2" />
-                      Settings
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="text-destructive">
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Leave Group
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </Card>
+              </Card>
+            </Link>
           ))}
         </div>
       ) : (

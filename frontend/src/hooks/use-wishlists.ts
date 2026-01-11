@@ -255,3 +255,53 @@ export function useMarkAsPurchased() {
     },
   });
 }
+
+// Wishlist sharing hooks
+export function useWishlistShares(wishlistId: string) {
+  const { getToken } = useAuth();
+
+  return useQuery({
+    queryKey: ['wishlists', wishlistId, 'shares'],
+    queryFn: async () => {
+      const token = await getToken();
+      api.setToken(token);
+      const response = await api.getWishlistShares(wishlistId);
+      return response.data;
+    },
+    enabled: !!wishlistId,
+  });
+}
+
+export function useShareWithGroup() {
+  const queryClient = useQueryClient();
+  const { getToken } = useAuth();
+
+  return useMutation({
+    mutationFn: async ({ wishlistId, groupId }: { wishlistId: string; groupId: string }) => {
+      const token = await getToken();
+      api.setToken(token);
+      return api.shareWishlistWithGroup(wishlistId, groupId);
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['wishlists', variables.wishlistId, 'shares'] });
+      queryClient.invalidateQueries({ queryKey: ['groups'] });
+    },
+  });
+}
+
+export function useUnshareFromGroup() {
+  const queryClient = useQueryClient();
+  const { getToken } = useAuth();
+
+  return useMutation({
+    mutationFn: async ({ wishlistId, groupId }: { wishlistId: string; groupId: string }) => {
+      const token = await getToken();
+      api.setToken(token);
+      return api.unshareWishlistFromGroup(wishlistId, groupId);
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['wishlists', variables.wishlistId, 'shares'] });
+      queryClient.invalidateQueries({ queryKey: ['groups'] });
+    },
+  });
+}
