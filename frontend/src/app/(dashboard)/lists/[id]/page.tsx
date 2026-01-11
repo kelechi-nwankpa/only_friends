@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, use } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Plus, Share2, Settings, ExternalLink, MoreHorizontal, Edit, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -18,8 +18,8 @@ import { AddItemDialog } from '@/components/wishlists/add-item-dialog';
 import { ShareDialog } from '@/components/wishlists/share-dialog';
 import { formatCurrency } from '@/lib/utils';
 
-export default function WishlistDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
+export default function WishlistDetailPage({ params }: { params: { id: string } }) {
+  const { id } = params;
   const { data: wishlist, isLoading } = useWishlist(id);
   const [showAddItem, setShowAddItem] = useState(false);
   const [showShare, setShowShare] = useState(false);
@@ -69,8 +69,8 @@ export default function WishlistDetailPage({ params }: { params: Promise<{ id: s
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-3xl font-bold tracking-tight">{wishlist.title}</h1>
-              <Badge variant={wishlist.isPublic ? 'default' : 'secondary'}>
-                {wishlist.isPublic ? 'Public' : 'Private'}
+              <Badge variant={wishlist.visibility === 'public' ? 'default' : 'secondary'}>
+                {wishlist.visibility === 'public' ? 'Public' : wishlist.visibility === 'shared' ? 'Shared' : 'Private'}
               </Badge>
             </div>
             <p className="text-muted-foreground">

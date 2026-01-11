@@ -20,8 +20,7 @@ export function useWishlists() {
     queryFn: async () => {
       const token = await getToken();
       api.setToken(token);
-      const response = await api.getWishlists();
-      return response.data;
+      return api.getWishlists();
     },
   });
 }

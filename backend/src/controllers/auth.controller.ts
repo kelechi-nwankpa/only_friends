@@ -20,6 +20,8 @@ interface ClerkWebhookEvent {
  * Syncs user data from Clerk to our database
  */
 export const handleClerkWebhook: RequestHandler = async (req, res, next) => {
+  console.log('Webhook received:', req.headers['svix-id']);
+
   try {
     const webhookSecret = config.clerk.webhookSecret;
 
@@ -40,14 +42,21 @@ export const handleClerkWebhook: RequestHandler = async (req, res, next) => {
     let event: ClerkWebhookEvent;
 
     try {
-      event = wh.verify(JSON.stringify(req.body), {
+      // Use raw body for signature verification (preserved by express.json verify option)
+      const rawBody = (req as typeof req & { rawBody?: Buffer }).rawBody;
+      const bodyString = rawBody ? rawBody.toString() : JSON.stringify(req.body);
+
+      event = wh.verify(bodyString, {
         'svix-id': svixId,
         'svix-timestamp': svixTimestamp,
         'svix-signature': svixSignature,
       }) as ClerkWebhookEvent;
-    } catch {
+    } catch (err) {
+      console.error('Webhook signature verification failed:', err);
       throw AppError.badRequest('Invalid webhook signature');
     }
+
+    console.log('Webhook event verified:', event.type);
 
     // Handle different event types
     switch (event.type) {

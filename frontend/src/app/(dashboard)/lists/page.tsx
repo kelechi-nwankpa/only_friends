@@ -50,49 +50,52 @@ export default function ListsPage() {
         </div>
       ) : wishlists && wishlists.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {wishlists.map((list) => (
-            <Card key={list.id} className="group relative">
-              <Link href={`/lists/${list.id}`}>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">{list.title}</CardTitle>
-                    <Badge variant={list.isPublic ? 'default' : 'secondary'}>
-                      {list.isPublic ? 'Public' : 'Private'}
-                    </Badge>
-                  </div>
-                  <CardDescription>{list.description || 'No description'}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">
-                    {list._count?.items || 0} items
-                  </p>
-                </CardContent>
-              </Link>
-              <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem>
-                      <Edit className="h-4 w-4 mr-2" />
-                      Edit
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <Share2 className="h-4 w-4 mr-2" />
-                      Share
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="text-destructive">
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Delete
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </Card>
-          ))}
+          {wishlists.map((list) => {
+            const isPublic = list.visibility === 'public' || list.isPublic;
+            return (
+              <Card key={list.id} className="group relative overflow-visible">
+                <Link href={`/lists/${list.id}`}>
+                  <CardHeader className="pr-12">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-lg">{list.title}</CardTitle>
+                      <Badge variant={isPublic ? 'default' : 'secondary'}>
+                        {isPublic ? 'Public' : 'Private'}
+                      </Badge>
+                    </div>
+                    <CardDescription>{list.description || list.type || 'No description'}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground">
+                      {list.itemCount ?? list._count?.items ?? 0} items
+                    </p>
+                  </CardContent>
+                </Link>
+                <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.preventDefault()}>
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem>
+                        <Edit className="h-4 w-4 mr-2" />
+                        Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuItem>
+                        <Share2 className="h-4 w-4 mr-2" />
+                        Share
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="text-destructive">
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </Card>
+            );
+          })}
         </div>
       ) : (
         <Card>

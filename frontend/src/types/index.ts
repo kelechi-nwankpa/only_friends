@@ -13,15 +13,19 @@ export interface Wishlist {
   id: string;
   title: string;
   description?: string;
-  occasion?: string;
-  eventDate?: string;
-  isPublic: boolean;
-  ownerId: string;
+  type?: string;
+  visibility?: 'private' | 'public' | 'shared';
+  isPublic?: boolean;
+  isArchived?: boolean;
+  ownerId?: string;
   owner?: User;
+  isOwner?: boolean;
   items?: WishlistItem[];
   shares?: WishlistShare[];
+  shareSlug?: string;
   createdAt: string;
   updatedAt: string;
+  itemCount?: number;
   _count?: {
     items: number;
     shares: number;
@@ -177,9 +181,8 @@ export interface PaginatedResponse<T> {
 export type CreateWishlistInput = {
   title: string;
   description?: string;
-  occasion?: string;
-  eventDate?: string;
-  isPublic?: boolean;
+  type?: 'general' | 'birthday' | 'christmas' | 'wedding' | 'baby' | 'home';
+  visibility?: 'private' | 'shared' | 'public';
 };
 
 export type UpdateWishlistInput = Partial<CreateWishlistInput>;

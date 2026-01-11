@@ -1,11 +1,18 @@
-import { Suspense } from 'react';
+'use client';
+
 import Link from 'next/link';
 import { Gift, Users, Calendar, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useWishlists } from '@/hooks/use-wishlists';
 
 export default function DashboardPage() {
+  const { data: wishlists, isLoading: wishlistsLoading } = useWishlists();
+
+  const wishlistCount = wishlists?.length ?? 0;
+  const recentWishlists = wishlists?.slice(0, 3) ?? [];
+
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
@@ -31,9 +38,11 @@ export default function DashboardPage() {
             <Gift className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <Suspense fallback={<Skeleton className="h-8 w-16" />}>
-              <div className="text-2xl font-bold">0</div>
-            </Suspense>
+            {wishlistsLoading ? (
+              <Skeleton className="h-8 w-16" />
+            ) : (
+              <div className="text-2xl font-bold">{wishlistCount}</div>
+            )}
             <p className="text-xs text-muted-foreground">
               across all occasions
             </p>
@@ -45,9 +54,7 @@ export default function DashboardPage() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <Suspense fallback={<Skeleton className="h-8 w-16" />}>
-              <div className="text-2xl font-bold">0</div>
-            </Suspense>
+            <div className="text-2xl font-bold">0</div>
             <p className="text-xs text-muted-foreground">
               active groups
             </p>
@@ -59,9 +66,7 @@ export default function DashboardPage() {
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <Suspense fallback={<Skeleton className="h-8 w-16" />}>
-              <div className="text-2xl font-bold">0</div>
-            </Suspense>
+            <div className="text-2xl font-bold">0</div>
             <p className="text-xs text-muted-foreground">
               upcoming exchanges
             </p>
@@ -79,15 +84,40 @@ export default function DashboardPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-center py-8 text-muted-foreground">
-              <Gift className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No wishlists yet</p>
-              <Link href="/lists/new">
-                <Button variant="link" className="mt-2">
-                  Create your first wishlist
-                </Button>
-              </Link>
-            </div>
+            {wishlistsLoading ? (
+              <div className="space-y-3">
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+              </div>
+            ) : recentWishlists.length > 0 ? (
+              <div className="space-y-3">
+                {recentWishlists.map((list) => (
+                  <Link
+                    key={list.id}
+                    href={`/lists/${list.id}`}
+                    className="flex items-center justify-between p-3 rounded-lg border hover:bg-accent transition-colors"
+                  >
+                    <div>
+                      <p className="font-medium">{list.title}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {list.itemCount ?? list._count?.items ?? 0} items
+                      </p>
+                    </div>
+                    <Gift className="h-4 w-4 text-muted-foreground" />
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <Gift className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>No wishlists yet</p>
+                <Link href="/lists/new">
+                  <Button variant="link" className="mt-2">
+                    Create your first wishlist
+                  </Button>
+                </Link>
+              </div>
+            )}
           </CardContent>
         </Card>
 

@@ -19,15 +19,14 @@ import {
 import { useCreateWishlist } from '@/hooks/use-wishlists';
 import { useToast } from '@/components/ui/use-toast';
 
-const occasions = [
+const wishlistTypes = [
+  { value: 'general', label: 'General' },
   { value: 'birthday', label: 'Birthday' },
   { value: 'christmas', label: 'Christmas' },
   { value: 'wedding', label: 'Wedding' },
-  { value: 'baby_shower', label: 'Baby Shower' },
-  { value: 'anniversary', label: 'Anniversary' },
-  { value: 'graduation', label: 'Graduation' },
-  { value: 'other', label: 'Other' },
-];
+  { value: 'baby', label: 'Baby Shower' },
+  { value: 'home', label: 'Home' },
+] as const;
 
 export default function NewListPage() {
   const router = useRouter();
@@ -36,8 +35,8 @@ export default function NewListPage() {
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [occasion, setOccasion] = useState('');
-  const [isPublic, setIsPublic] = useState(false);
+  const [type, setType] = useState<'general' | 'birthday' | 'christmas' | 'wedding' | 'baby' | 'home'>('general');
+  const [visibility, setVisibility] = useState<'private' | 'shared' | 'public'>('private');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,8 +54,8 @@ export default function NewListPage() {
       const wishlist = await createWishlist.mutateAsync({
         title,
         description,
-        occasion: occasion || undefined,
-        isPublic,
+        type,
+        visibility,
       });
 
       toast({
@@ -120,15 +119,15 @@ export default function NewListPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="occasion">Occasion</Label>
-              <Select value={occasion} onValueChange={setOccasion}>
+              <Label htmlFor="type">Type</Label>
+              <Select value={type} onValueChange={(v) => setType(v as typeof type)}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select an occasion" />
+                  <SelectValue placeholder="Select a type" />
                 </SelectTrigger>
                 <SelectContent>
-                  {occasions.map((occ) => (
-                    <SelectItem key={occ.value} value={occ.value}>
-                      {occ.label}
+                  {wishlistTypes.map((t) => (
+                    <SelectItem key={t.value} value={t.value}>
+                      {t.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -138,14 +137,15 @@ export default function NewListPage() {
             <div className="space-y-2">
               <Label htmlFor="visibility">Visibility</Label>
               <Select
-                value={isPublic ? 'public' : 'private'}
-                onValueChange={(v) => setIsPublic(v === 'public')}
+                value={visibility}
+                onValueChange={(v) => setVisibility(v as typeof visibility)}
               >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="private">Private - Only people you share with</SelectItem>
+                  <SelectItem value="shared">Shared - With specific groups</SelectItem>
                   <SelectItem value="public">Public - Anyone with the link</SelectItem>
                 </SelectContent>
               </Select>

@@ -19,13 +19,17 @@ class ApiClient {
     options: RequestInit = {}
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
-    const headers: HeadersInit = {
+    const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...options.headers,
     };
 
     if (this.token) {
       headers['Authorization'] = `Bearer ${this.token}`;
+    }
+
+    // Merge with any additional headers from options
+    if (options.headers) {
+      Object.assign(headers, options.headers);
     }
 
     const response = await fetch(url, {
@@ -51,18 +55,21 @@ class ApiClient {
 
   // Wishlists
   async getWishlists() {
-    return this.request<{ data: import('@/types').Wishlist[] }>('/wishlists');
+    const response = await this.request<{ success: boolean; data: { wishlists: import('@/types').Wishlist[] } }>('/wishlists');
+    return response.data.wishlists;
   }
 
   async getWishlist(id: string) {
-    return this.request<import('@/types').Wishlist>(`/wishlists/${id}`);
+    const response = await this.request<{ success: boolean; data: import('@/types').Wishlist }>(`/wishlists/${id}`);
+    return response.data;
   }
 
   async createWishlist(data: import('@/types').CreateWishlistInput) {
-    return this.request<import('@/types').Wishlist>('/wishlists', {
+    const response = await this.request<{ success: boolean; data: import('@/types').Wishlist }>('/wishlists', {
       method: 'POST',
       body: JSON.stringify(data),
     });
+    return response.data;
   }
 
   async updateWishlist(id: string, data: import('@/types').UpdateWishlistInput) {

@@ -2,6 +2,7 @@ import express, { type Express } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import { clerkMiddleware } from '@clerk/express';
 import { config } from './config/index.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { notFoundHandler } from './middleware/notFoundHandler.js';
@@ -31,12 +32,21 @@ export function createApp(): Express {
     app.use(morgan('combined'));
   }
 
-  // Body parsing
-  app.use(express.json({ limit: '10mb' }));
+  // Body parsing - preserve raw body for webhook signature verification
+  app.use(express.json({
+    limit: '10mb',
+    verify: (req, _res, buf) => {
+      // Store raw body for webhook signature verification
+      (req as express.Request & { rawBody?: Buffer }).rawBody = buf;
+    },
+  }));
   app.use(express.urlencoded({ extended: true }));
 
   // Rate limiting
   app.use(rateLimiter);
+
+  // Clerk middleware - parses auth from headers/cookies
+  app.use(clerkMiddleware());
 
   // Health check endpoint
   app.get('/health', (_req, res) => {

@@ -1,37 +1,48 @@
 import type { RequestHandler } from 'express';
-import { clerkClient } from '@clerk/express';
+import { clerkClient, getAuth } from '@clerk/express';
 import { prisma } from '../config/database.js';
 import { AppError } from '../utils/errors.js';
 import type { AuthenticatedRequest, MagicLinkAuthRequest } from '../types/auth.types.js';
 
 /**
  * Middleware to require Clerk authentication
- * Extracts user from JWT and attaches to request
+ * Uses Clerk's getAuth() to extract user from the request
  */
 export const requireAuth: RequestHandler = async (req, res, next) => {
   try {
-    const authHeader = req.headers.authorization;
+    // Use Clerk's getAuth to get authentication state
+    const auth = getAuth(req);
+    console.log('Auth state:', { userId: auth.userId, sessionId: auth.sessionId });
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new AppError('UNAUTHORIZED', 'Missing or invalid authorization header', 401);
+    if (!auth.userId) {
+      throw new AppError('UNAUTHORIZED', 'Not authenticated', 401);
     }
 
-    const token = authHeader.substring(7);
-
-    // Verify the token with Clerk
-    const { sub: clerkId } = await clerkClient.verifyToken(token);
-
-    if (!clerkId) {
-      throw new AppError('UNAUTHORIZED', 'Invalid token', 401);
-    }
+    const clerkId = auth.userId;
 
     // Get user from database
-    const user = await prisma.user.findUnique({
+    let user = await prisma.user.findUnique({
       where: { clerkId },
     });
 
+    // Auto-create user if doesn't exist (fallback for webhook delay)
     if (!user) {
-      throw new AppError('UNAUTHORIZED', 'User not found', 401);
+      console.log('User not in DB, fetching from Clerk...');
+      try {
+        const clerkUser = await clerkClient.users.getUser(clerkId);
+        user = await prisma.user.create({
+          data: {
+            clerkId,
+            email: clerkUser.emailAddresses[0]?.emailAddress || '',
+            name: [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(' ') || 'User',
+            avatarUrl: clerkUser.imageUrl || null,
+          },
+        });
+        console.log('User created from Clerk data:', user.id);
+      } catch (createError) {
+        console.error('Failed to auto-create user:', createError);
+        throw new AppError('UNAUTHORIZED', 'User not found', 401);
+      }
     }
 
     // Attach user to request
@@ -43,6 +54,7 @@ export const requireAuth: RequestHandler = async (req, res, next) => {
     if (error instanceof AppError) {
       next(error);
     } else {
+      console.error('Auth error:', error);
       next(new AppError('UNAUTHORIZED', 'Authentication failed', 401));
     }
   }
@@ -54,29 +66,19 @@ export const requireAuth: RequestHandler = async (req, res, next) => {
  */
 export const requireAuthOrMagicLink: RequestHandler = async (req, res, next) => {
   try {
-    const authHeader = req.headers.authorization;
     const magicToken = req.headers['x-magic-token'] as string | undefined;
 
     // Try Clerk auth first
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.substring(7);
+    const auth = getAuth(req);
+    if (auth.userId) {
+      const user = await prisma.user.findUnique({
+        where: { clerkId: auth.userId },
+      });
 
-      try {
-        const { sub: clerkId } = await clerkClient.verifyToken(token);
-
-        if (clerkId) {
-          const user = await prisma.user.findUnique({
-            where: { clerkId },
-          });
-
-          if (user) {
-            (req as AuthenticatedRequest).user = user;
-            (req as AuthenticatedRequest).clerkId = clerkId;
-            return next();
-          }
-        }
-      } catch {
-        // Clerk auth failed, try magic link
+      if (user) {
+        (req as AuthenticatedRequest).user = user;
+        (req as AuthenticatedRequest).clerkId = auth.userId;
+        return next();
       }
     }
 
@@ -131,26 +133,16 @@ export const requireAuthOrMagicLink: RequestHandler = async (req, res, next) => 
  */
 export const optionalAuth: RequestHandler = async (req, _res, next) => {
   try {
-    const authHeader = req.headers.authorization;
+    const auth = getAuth(req);
 
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.substring(7);
+    if (auth.userId) {
+      const user = await prisma.user.findUnique({
+        where: { clerkId: auth.userId },
+      });
 
-      try {
-        const { sub: clerkId } = await clerkClient.verifyToken(token);
-
-        if (clerkId) {
-          const user = await prisma.user.findUnique({
-            where: { clerkId },
-          });
-
-          if (user) {
-            (req as AuthenticatedRequest).user = user;
-            (req as AuthenticatedRequest).clerkId = clerkId;
-          }
-        }
-      } catch {
-        // Auth failed, continue without user
+      if (user) {
+        (req as AuthenticatedRequest).user = user;
+        (req as AuthenticatedRequest).clerkId = auth.userId;
       }
     }
 
