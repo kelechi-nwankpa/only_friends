@@ -106,12 +106,12 @@ class ApiClient {
   }
 
   async updateWishlistItem(
-    wishlistId: string,
+    _wishlistId: string,
     itemId: string,
     data: import('@/types').UpdateWishlistItemInput
   ) {
     return this.request<import('@/types').WishlistItem>(
-      `/wishlists/${wishlistId}/items/${itemId}`,
+      `/items/${itemId}`,
       {
         method: 'PATCH',
         body: JSON.stringify(data),
@@ -119,8 +119,8 @@ class ApiClient {
     );
   }
 
-  async deleteWishlistItem(wishlistId: string, itemId: string) {
-    return this.request<void>(`/wishlists/${wishlistId}/items/${itemId}`, {
+  async deleteWishlistItem(_wishlistId: string, itemId: string) {
+    return this.request<void>(`/items/${itemId}`, {
       method: 'DELETE',
     });
   }
