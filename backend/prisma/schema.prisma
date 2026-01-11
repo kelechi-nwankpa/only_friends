@@ -1,0 +1,462 @@
+// Prisma Schema for Wishlist App
+// Database: PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// USERS
+// ============================================
+model User {
+  id        String   @id @default(uuid())
+  clerkId   String   @unique @map("clerk_id")
+  email     String?  @unique
+  name      String
+  avatarUrl String?  @map("avatar_url")
+  isPremium Boolean  @default(false) @map("is_premium")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  wishlists           Wishlist[]
+  reservations        Reservation[]
+  groupsCreated       Group[]               @relation("GroupCreator")
+  groupMemberships    GroupMember[]
+  wishlistShares      WishlistUserShare[]   @relation("SharedWith")
+  wishlistSharesBy    WishlistUserShare[]   @relation("SharedBy")
+  exchangesCreated    Exchange[]
+  exchangeParticipations ExchangeParticipant[]
+  giftHistoryGiven    GiftHistory[]         @relation("GiftGiver")
+  giftHistoryReceived GiftHistory[]         @relation("GiftReceiver")
+  notifications       Notification[]
+  pushTokens          PushToken[]
+  chatMessages        ChatMessage[]
+  aiSuggestions       AiGiftSuggestion[]
+  priceAlerts         PriceAlert[]
+  magicLinkTokens     MagicLinkToken[]
+
+  @@map("users")
+}
+
+// ============================================
+// WISHLISTS
+// ============================================
+model Wishlist {
+  id          String   @id @default(uuid())
+  ownerId     String   @map("owner_id")
+  title       String
+  description String?
+  type        String   @default("general") // general, birthday, christmas, wedding, baby, home
+  visibility  String   @default("private") // private, shared, public
+  shareSlug   String?  @unique @map("share_slug")
+  isArchived  Boolean  @default(false) @map("is_archived")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  owner       User                  @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  items       WishlistItem[]
+  groupShares WishlistGroupShare[]
+  userShares  WishlistUserShare[]
+  exchangeParticipants ExchangeParticipant[]
+
+  @@index([ownerId])
+  @@index([shareSlug])
+  @@map("wishlists")
+}
+
+// ============================================
+// WISHLIST ITEMS
+// ============================================
+model WishlistItem {
+  id         String   @id @default(uuid())
+  wishlistId String   @map("wishlist_id")
+  title      String
+  url        String?
+  imageUrl   String?  @map("image_url")
+  price      Decimal? @db.Decimal(10, 2)
+  currency   String   @default("USD")
+  notes      String?
+  priority   String   @default("medium") // low, medium, high
+  position   Int      @default(0)
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  wishlist     Wishlist      @relation(fields: [wishlistId], references: [id], onDelete: Cascade)
+  reservation  Reservation?
+  priceHistory PriceHistory[]
+  priceAlerts  PriceAlert[]
+
+  @@index([wishlistId])
+  @@map("wishlist_items")
+}
+
+// ============================================
+// PRICE HISTORY
+// ============================================
+model PriceHistory {
+  id         String   @id @default(uuid())
+  itemId     String   @map("item_id")
+  price      Decimal  @db.Decimal(10, 2)
+  currency   String   @default("USD")
+  recordedAt DateTime @default(now()) @map("recorded_at")
+
+  // Relations
+  item WishlistItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@index([itemId])
+  @@index([recordedAt])
+  @@map("price_history")
+}
+
+// ============================================
+// PRICE ALERTS
+// ============================================
+model PriceAlert {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  itemId      String   @map("item_id")
+  targetPrice Decimal? @map("target_price") @db.Decimal(10, 2)
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  item WishlistItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, itemId])
+  @@map("price_alerts")
+}
+
+// ============================================
+// RESERVATIONS
+// CRITICAL: Owner must NEVER see this data
+// ============================================
+model Reservation {
+  id         String   @id @default(uuid())
+  itemId     String   @unique @map("item_id")
+  reserverId String   @map("reserver_id")
+  status     String   @default("reserved") // reserved, purchased
+  notes      String?
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  item     WishlistItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  reserver User         @relation(fields: [reserverId], references: [id], onDelete: Cascade)
+
+  @@map("reservations")
+}
+
+// ============================================
+// GROUPS
+// ============================================
+model Group {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  avatarUrl   String?  @map("avatar_url")
+  createdBy   String   @map("created_by")
+  inviteCode  String?  @unique @map("invite_code")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  creator         User                 @relation("GroupCreator", fields: [createdBy], references: [id])
+  members         GroupMember[]
+  wishlistShares  WishlistGroupShare[]
+  exchanges       Exchange[]
+
+  @@index([inviteCode])
+  @@map("groups")
+}
+
+// ============================================
+// GROUP MEMBERS
+// ============================================
+model GroupMember {
+  groupId  String   @map("group_id")
+  userId   String   @map("user_id")
+  role     String   @default("member") // admin, member
+  joinedAt DateTime @default(now()) @map("joined_at")
+
+  // Relations
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([groupId, userId])
+  @@index([userId])
+  @@map("group_members")
+}
+
+// ============================================
+// WISHLIST SHARING - GROUPS
+// ============================================
+model WishlistGroupShare {
+  wishlistId String   @map("wishlist_id")
+  groupId    String   @map("group_id")
+  sharedAt   DateTime @default(now()) @map("shared_at")
+
+  // Relations
+  wishlist Wishlist @relation(fields: [wishlistId], references: [id], onDelete: Cascade)
+  group    Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@id([wishlistId, groupId])
+  @@map("wishlist_group_shares")
+}
+
+// ============================================
+// WISHLIST SHARING - DIRECT USERS
+// ============================================
+model WishlistUserShare {
+  wishlistId String   @map("wishlist_id")
+  userId     String   @map("user_id")
+  sharedBy   String   @map("shared_by")
+  sharedAt   DateTime @default(now()) @map("shared_at")
+
+  // Relations
+  wishlist     Wishlist @relation(fields: [wishlistId], references: [id], onDelete: Cascade)
+  user         User     @relation("SharedWith", fields: [userId], references: [id], onDelete: Cascade)
+  sharedByUser User     @relation("SharedBy", fields: [sharedBy], references: [id])
+
+  @@id([wishlistId, userId])
+  @@index([userId])
+  @@map("wishlist_user_shares")
+}
+
+// ============================================
+// EXCHANGES (Secret Santa)
+// ============================================
+model Exchange {
+  id                String    @id @default(uuid())
+  groupId           String?   @map("group_id")
+  name              String
+  description       String?
+  budgetMin         Decimal?  @map("budget_min") @db.Decimal(10, 2)
+  budgetMax         Decimal?  @map("budget_max") @db.Decimal(10, 2)
+  currency          String    @default("USD")
+  drawDate          DateTime? @map("draw_date") @db.Date
+  exchangeDate      DateTime? @map("exchange_date") @db.Date
+  status            String    @default("open") // open, drawn, completed, archived
+  isIncognito       Boolean   @default(false) @map("is_incognito")
+  incognitoDeleteAt DateTime? @map("incognito_delete_at")
+  createdBy         String    @map("created_by")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  group        Group?                @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  creator      User                  @relation(fields: [createdBy], references: [id])
+  participants ExchangeParticipant[]
+  exclusions   ExchangeExclusion[]
+  assignments  ExchangeAssignment[]
+  magicLinks   MagicLinkToken[]
+  chatMessages ChatMessage[]
+  giftHistory  GiftHistory[]
+
+  @@index([status])
+  @@index([isIncognito, incognitoDeleteAt])
+  @@map("exchanges")
+}
+
+// ============================================
+// EXCHANGE PARTICIPANTS
+// ============================================
+model ExchangeParticipant {
+  id          String   @id @default(uuid())
+  exchangeId  String   @map("exchange_id")
+  userId      String?  @map("user_id")
+  name        String
+  email       String?
+  phone       String?
+  wishlistId  String?  @map("wishlist_id")
+  hasRevealed Boolean  @default(false) @map("has_revealed")
+  joinedAt    DateTime @default(now()) @map("joined_at")
+
+  // Relations
+  exchange        Exchange             @relation(fields: [exchangeId], references: [id], onDelete: Cascade)
+  user            User?                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  wishlist        Wishlist?            @relation(fields: [wishlistId], references: [id], onDelete: SetNull)
+  magicLinks      MagicLinkToken[]
+  exclusionsA     ExchangeExclusion[]  @relation("ExclusionParticipantA")
+  exclusionsB     ExchangeExclusion[]  @relation("ExclusionParticipantB")
+  assignmentsGiver   ExchangeAssignment[] @relation("AssignmentGiver")
+  assignmentsReceiver ExchangeAssignment[] @relation("AssignmentReceiver")
+
+  @@unique([exchangeId, userId])
+  @@index([exchangeId])
+  @@map("exchange_participants")
+}
+
+// ============================================
+// MAGIC LINK TOKENS
+// ============================================
+model MagicLinkToken {
+  id            String    @id @default(uuid())
+  token         String    @unique
+  exchangeId    String    @map("exchange_id")
+  participantId String    @map("participant_id")
+  userId        String?   @map("user_id")
+  expiresAt     DateTime  @map("expires_at")
+  usedAt        DateTime? @map("used_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  exchange    Exchange            @relation(fields: [exchangeId], references: [id], onDelete: Cascade)
+  participant ExchangeParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  user        User?               @relation(fields: [userId], references: [id])
+
+  @@index([token])
+  @@index([expiresAt])
+  @@map("magic_link_tokens")
+}
+
+// ============================================
+// EXCHANGE EXCLUSIONS
+// ============================================
+model ExchangeExclusion {
+  id           String @id @default(uuid())
+  exchangeId   String @map("exchange_id")
+  participantA String @map("participant_a")
+  participantB String @map("participant_b")
+  reason       String? // spouse, same_household, custom
+
+  // Relations
+  exchange               Exchange            @relation(fields: [exchangeId], references: [id], onDelete: Cascade)
+  participantARelation   ExchangeParticipant @relation("ExclusionParticipantA", fields: [participantA], references: [id], onDelete: Cascade)
+  participantBRelation   ExchangeParticipant @relation("ExclusionParticipantB", fields: [participantB], references: [id], onDelete: Cascade)
+
+  @@unique([exchangeId, participantA, participantB])
+  @@map("exchange_exclusions")
+}
+
+// ============================================
+// EXCHANGE ASSIGNMENTS
+// ============================================
+model ExchangeAssignment {
+  id         String @id @default(uuid())
+  exchangeId String @map("exchange_id")
+  giverId    String @map("giver_id")
+  receiverId String @map("receiver_id")
+
+  // Relations
+  exchange Exchange            @relation(fields: [exchangeId], references: [id], onDelete: Cascade)
+  giver    ExchangeParticipant @relation("AssignmentGiver", fields: [giverId], references: [id], onDelete: Cascade)
+  receiver ExchangeParticipant @relation("AssignmentReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@unique([exchangeId, giverId])
+  @@map("exchange_assignments")
+}
+
+// ============================================
+// GIFT HISTORY
+// ============================================
+model GiftHistory {
+  id           String    @id @default(uuid())
+  giverId      String    @map("giver_id")
+  receiverId   String    @map("receiver_id")
+  itemTitle    String    @map("item_title")
+  itemUrl      String?   @map("item_url")
+  imageUrl     String?   @map("image_url")
+  price        Decimal?  @db.Decimal(10, 2)
+  currency     String    @default("USD")
+  exchangeId   String?   @map("exchange_id")
+  occasion     String?
+  giftedAt     DateTime  @default(now()) @map("gifted_at") @db.Date
+  notes        String?
+  thankYouSent Boolean   @default(false) @map("thank_you_sent")
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  giver    User      @relation("GiftGiver", fields: [giverId], references: [id], onDelete: Cascade)
+  receiver User      @relation("GiftReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  exchange Exchange? @relation(fields: [exchangeId], references: [id], onDelete: SetNull)
+
+  @@index([giverId])
+  @@index([receiverId])
+  @@index([giftedAt])
+  @@map("gift_history")
+}
+
+// ============================================
+// NOTIFICATIONS
+// ============================================
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  type      String   // exchange_invite, names_drawn, item_reserved, price_drop, etc.
+  title     String
+  body      String?
+  data      Json?
+  isRead    Boolean  @default(false) @map("is_read")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, isRead])
+  @@map("notifications")
+}
+
+// ============================================
+// PUSH TOKENS
+// ============================================
+model PushToken {
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  token      String
+  platform   String   // ios, android, web
+  deviceName String?  @map("device_name")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, token])
+  @@index([userId])
+  @@map("push_tokens")
+}
+
+// ============================================
+// CHAT MESSAGES
+// ============================================
+model ChatMessage {
+  id         String   @id @default(uuid())
+  exchangeId String   @map("exchange_id")
+  senderId   String   @map("sender_id")
+  message    String
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  // Relations
+  exchange Exchange @relation(fields: [exchangeId], references: [id], onDelete: Cascade)
+  sender   User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([exchangeId])
+  @@index([exchangeId, createdAt])
+  @@map("chat_messages")
+}
+
+// ============================================
+// AI GIFT SUGGESTIONS
+// ============================================
+model AiGiftSuggestion {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  prompt      String
+  suggestions Json
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("ai_gift_suggestions")
+}
