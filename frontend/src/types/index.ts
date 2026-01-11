@@ -34,17 +34,21 @@ export interface Wishlist {
 
 export interface WishlistItem {
   id: string;
-  name: string;
-  description?: string;
+  title: string;
+  notes?: string;
   url?: string;
   imageUrl?: string;
   price?: number;
-  currency: string;
-  priority?: 'LOW' | 'MEDIUM' | 'HIGH';
-  quantity: number;
+  currency?: string;
+  priority?: 'low' | 'medium' | 'high';
+  position?: number;
   wishlistId: string;
   createdAt: string;
   updatedAt: string;
+  reservation?: {
+    status: string;
+    reserver?: { id: string; name: string };
+  } | null;
 }
 
 export interface WishlistShare {
@@ -188,14 +192,13 @@ export type CreateWishlistInput = {
 export type UpdateWishlistInput = Partial<CreateWishlistInput>;
 
 export type CreateWishlistItemInput = {
-  name: string;
-  description?: string;
+  title: string;
+  notes?: string;
   url?: string;
   imageUrl?: string;
   price?: number;
   currency?: string;
-  priority?: 'LOW' | 'MEDIUM' | 'HIGH';
-  quantity?: number;
+  priority?: 'low' | 'medium' | 'high';
 };
 
 export type UpdateWishlistItemInput = Partial<CreateWishlistItemInput>;

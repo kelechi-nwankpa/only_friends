@@ -115,14 +115,14 @@ export default function WishlistDetailPage({ params }: { params: { id: string } 
                 <div className="aspect-video w-full overflow-hidden bg-muted">
                   <img
                     src={item.imageUrl}
-                    alt={item.name}
+                    alt={item.title}
                     className="h-full w-full object-cover"
                   />
                 </div>
               )}
               <CardHeader className="pb-2">
                 <div className="flex items-start justify-between">
-                  <CardTitle className="text-base line-clamp-2">{item.name}</CardTitle>
+                  <CardTitle className="text-base line-clamp-2">{item.title}</CardTitle>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -141,9 +141,9 @@ export default function WishlistDetailPage({ params }: { params: { id: string } 
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
-                {item.description && (
+                {item.notes && (
                   <CardDescription className="line-clamp-2">
-                    {item.description}
+                    {item.notes}
                   </CardDescription>
                 )}
               </CardHeader>
@@ -167,7 +167,7 @@ export default function WishlistDetailPage({ params }: { params: { id: string } 
                 </div>
                 {item.priority && (
                   <Badge variant="outline" className="mt-2">
-                    {item.priority === 'HIGH' ? 'Must Have' : item.priority === 'MEDIUM' ? 'Nice to Have' : 'Low Priority'}
+                    {item.priority === 'high' ? 'Must Have' : item.priority === 'medium' ? 'Nice to Have' : 'Low Priority'}
                   </Badge>
                 )}
               </CardContent>

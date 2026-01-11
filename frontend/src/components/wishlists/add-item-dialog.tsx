@@ -36,11 +36,11 @@ export function AddItemDialog({ open, onOpenChange, wishlistId }: AddItemDialogP
   const addItem = useAddWishlistItem();
 
   const [url, setUrl] = useState('');
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
+  const [title, setTitle] = useState('');
+  const [notes, setNotes] = useState('');
   const [price, setPrice] = useState('');
   const [imageUrl, setImageUrl] = useState('');
-  const [priority, setPriority] = useState<'LOW' | 'MEDIUM' | 'HIGH'>('MEDIUM');
+  const [priority, setPriority] = useState<'low' | 'medium' | 'high'>('medium');
   const [isImporting, setIsImporting] = useState(false);
 
   const handleUrlImport = async () => {
@@ -59,7 +59,7 @@ export function AddItemDialog({ open, onOpenChange, wishlistId }: AddItemDialogP
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!name.trim()) {
+    if (!title.trim()) {
       toast({
         title: 'Error',
         description: 'Please enter a name for the item',
@@ -72,8 +72,8 @@ export function AddItemDialog({ open, onOpenChange, wishlistId }: AddItemDialogP
       await addItem.mutateAsync({
         wishlistId,
         data: {
-          name,
-          description: description || undefined,
+          title,
+          notes: notes || undefined,
           url: url || undefined,
           imageUrl: imageUrl || undefined,
           price: price ? parseFloat(price) : undefined,
@@ -88,11 +88,11 @@ export function AddItemDialog({ open, onOpenChange, wishlistId }: AddItemDialogP
 
       // Reset form
       setUrl('');
-      setName('');
-      setDescription('');
+      setTitle('');
+      setNotes('');
       setPrice('');
       setImageUrl('');
-      setPriority('MEDIUM');
+      setPriority('medium');
       onOpenChange(false);
     } catch {
       toast({
@@ -161,22 +161,22 @@ export function AddItemDialog({ open, onOpenChange, wishlistId }: AddItemDialogP
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Item Name *</Label>
+            <Label htmlFor="title">Item Name *</Label>
             <Input
-              id="name"
+              id="title"
               placeholder="Blue Sweater"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
+            <Label htmlFor="notes">Notes</Label>
             <Textarea
-              id="description"
+              id="notes"
               placeholder="Size medium, navy blue color..."
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
             />
           </div>
 
@@ -200,9 +200,9 @@ export function AddItemDialog({ open, onOpenChange, wishlistId }: AddItemDialogP
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="HIGH">Must Have</SelectItem>
-                  <SelectItem value="MEDIUM">Nice to Have</SelectItem>
-                  <SelectItem value="LOW">Low Priority</SelectItem>
+                  <SelectItem value="high">Must Have</SelectItem>
+                  <SelectItem value="medium">Nice to Have</SelectItem>
+                  <SelectItem value="low">Low Priority</SelectItem>
                 </SelectContent>
               </Select>
             </div>
