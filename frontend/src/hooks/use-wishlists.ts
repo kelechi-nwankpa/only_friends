@@ -189,9 +189,69 @@ export function useRevokeShareLink() {
 }
 
 export function useSharedWishlist(slug: string) {
+  const { getToken, isSignedIn } = useAuth();
+
   return useQuery({
-    queryKey: ['shared-wishlist', slug],
-    queryFn: () => api.getSharedWishlist(slug),
+    queryKey: ['shared-wishlist', slug, isSignedIn],
+    queryFn: async () => {
+      // Send auth token if user is signed in (to see reservation status)
+      if (isSignedIn) {
+        const token = await getToken();
+        api.setToken(token);
+      } else {
+        api.setToken(null);
+      }
+      return api.getSharedWishlist(slug);
+    },
     enabled: !!slug,
+  });
+}
+
+// Reservation hooks
+export function useReserveItem() {
+  const queryClient = useQueryClient();
+  const { getToken } = useAuth();
+
+  return useMutation({
+    mutationFn: async ({ itemId, slug }: { itemId: string; slug: string }) => {
+      const token = await getToken();
+      api.setToken(token);
+      return api.reserveItem(itemId);
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['shared-wishlist', variables.slug] });
+    },
+  });
+}
+
+export function useUnreserveItem() {
+  const queryClient = useQueryClient();
+  const { getToken } = useAuth();
+
+  return useMutation({
+    mutationFn: async ({ itemId, slug }: { itemId: string; slug: string }) => {
+      const token = await getToken();
+      api.setToken(token);
+      return api.unreserveItem(itemId);
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['shared-wishlist', variables.slug] });
+    },
+  });
+}
+
+export function useMarkAsPurchased() {
+  const queryClient = useQueryClient();
+  const { getToken } = useAuth();
+
+  return useMutation({
+    mutationFn: async ({ itemId, slug }: { itemId: string; slug: string }) => {
+      const token = await getToken();
+      api.setToken(token);
+      return api.markAsPurchased(itemId);
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['shared-wishlist', variables.slug] });
+    },
   });
 }

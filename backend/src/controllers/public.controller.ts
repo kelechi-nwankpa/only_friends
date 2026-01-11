@@ -21,7 +21,7 @@ export const getPublicWishlist: RequestHandler = async (req, res, next) => {
           include: {
             reservation: {
               include: {
-                reserver: { select: { id: true, name: true } },
+                reserver: { select: { id: true, clerkId: true, name: true } },
               },
             },
           },

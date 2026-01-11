@@ -2,9 +2,11 @@ export interface User {
   id: string;
   clerkId: string;
   email: string;
+  name?: string;
   firstName?: string;
   lastName?: string;
   imageUrl?: string;
+  avatarUrl?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -47,7 +49,7 @@ export interface WishlistItem {
   updatedAt: string;
   reservation?: {
     status: string;
-    reserver?: { id: string; name: string };
+    reserver?: { id: string; clerkId?: string; name: string };
   } | null;
 }
 

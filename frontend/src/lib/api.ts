@@ -214,14 +214,15 @@ class ApiClient {
   }
 
   async unreserveItem(itemId: string) {
-    return this.request<void>(`/items/${itemId}/unreserve`, {
+    return this.request<void>(`/items/${itemId}/reserve`, {
       method: 'DELETE',
     });
   }
 
   async markAsPurchased(itemId: string) {
-    return this.request<import('@/types').Reservation>(`/items/${itemId}/purchased`, {
-      method: 'POST',
+    return this.request<import('@/types').Reservation>(`/items/${itemId}/reserve`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status: 'purchased' }),
     });
   }
 

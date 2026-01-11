@@ -1,18 +1,25 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import { Gift, ExternalLink, Package, Check, ShoppingBag } from 'lucide-react';
-import { SignInButton, useAuth } from '@clerk/nextjs';
+import { SignInButton, useAuth, useUser } from '@clerk/nextjs';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useSharedWishlist } from '@/hooks/use-wishlists';
+import {
+  useSharedWishlist,
+  useReserveItem,
+  useUnreserveItem,
+  useMarkAsPurchased,
+} from '@/hooks/use-wishlists';
+import { useToast } from '@/components/ui/use-toast';
 import { formatCurrency } from '@/lib/utils';
 
-export default function SharedWishlistPage({ params }: { params: { slug: string } }) {
-  const { slug } = params;
+export default function SharedWishlistPage() {
+  const params = useParams();
+  const slug = params.slug as string;
   const { isSignedIn } = useAuth();
   const { data: wishlist, isLoading, error } = useSharedWishlist(slug);
 
@@ -66,13 +73,13 @@ export default function SharedWishlistPage({ params }: { params: { slug: string 
               )}
               {wishlist.owner && (
                 <p className="text-sm text-muted-foreground mt-2">
-                  by {wishlist.owner.firstName || wishlist.owner.email || 'Someone special'}
+                  by {wishlist.owner.name || 'Someone special'}
                 </p>
               )}
             </div>
             <div className="flex items-center gap-2">
               {!isSignedIn && (
-                <SignInButton mode="modal">
+                <SignInButton mode="modal" fallbackRedirectUrl={`/list/${slug}`}>
                   <Button variant="outline">Sign in to reserve</Button>
                 </SignInButton>
               )}
@@ -89,6 +96,7 @@ export default function SharedWishlistPage({ params }: { params: { slug: string 
               <WishlistItemCard
                 key={item.id}
                 item={item}
+                slug={slug}
                 isSignedIn={isSignedIn ?? false}
                 isOwner={wishlist.isOwner ?? false}
               />
@@ -136,24 +144,73 @@ interface WishlistItemCardProps {
     priority?: string;
     reservation?: {
       status: string;
-      reserver?: { id: string; name: string };
+      reserver?: { id: string; clerkId?: string; name: string };
     } | null;
   };
+  slug: string;
   isSignedIn: boolean;
   isOwner: boolean;
 }
 
-function WishlistItemCard({ item, isSignedIn, isOwner }: WishlistItemCardProps) {
-  const [isReserving, setIsReserving] = useState(false);
+function WishlistItemCard({ item, slug, isSignedIn, isOwner }: WishlistItemCardProps) {
+  const { toast } = useToast();
+  const { user } = useUser();
+  const reserveItem = useReserveItem();
+  const unreserveItem = useUnreserveItem();
+  const markAsPurchased = useMarkAsPurchased();
 
   const isReserved = item.reservation?.status === 'reserved';
   const isPurchased = item.reservation?.status === 'purchased';
+  const isMyReservation = item.reservation?.reserver?.clerkId === user?.id;
 
   const handleReserve = async () => {
     if (!isSignedIn || isOwner) return;
-    setIsReserving(true);
-    // TODO: Implement reservation API call
-    setTimeout(() => setIsReserving(false), 1000);
+
+    try {
+      await reserveItem.mutateAsync({ itemId: item.id, slug });
+      toast({
+        title: 'Reserved!',
+        description: 'You\'ve reserved this gift. The wishlist owner won\'t know it was you!',
+      });
+    } catch {
+      toast({
+        title: 'Error',
+        description: 'Failed to reserve item. It may already be reserved.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleUnreserve = async () => {
+    try {
+      await unreserveItem.mutateAsync({ itemId: item.id, slug });
+      toast({
+        title: 'Unreserved',
+        description: 'You\'ve released your reservation on this gift.',
+      });
+    } catch {
+      toast({
+        title: 'Error',
+        description: 'Failed to unreserve item.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleMarkPurchased = async () => {
+    try {
+      await markAsPurchased.mutateAsync({ itemId: item.id, slug });
+      toast({
+        title: 'Marked as purchased!',
+        description: 'Great! Others will know this gift has been bought.',
+      });
+    } catch {
+      toast({
+        title: 'Error',
+        description: 'Failed to mark as purchased.',
+        variant: 'destructive',
+      });
+    }
   };
 
   return (
@@ -188,7 +245,7 @@ function WishlistItemCard({ item, isSignedIn, isOwner }: WishlistItemCardProps) 
             ) : (
               <>
                 <Check className="h-3 w-3" />
-                Reserved
+                {isMyReservation ? 'You reserved this' : 'Reserved'}
               </>
             )}
           </Badge>
@@ -229,17 +286,44 @@ function WishlistItemCard({ item, isSignedIn, isOwner }: WishlistItemCardProps) 
           </Badge>
         )}
 
-        {/* Reserve button for signed-in non-owners */}
-        {isSignedIn && !isOwner && !isReserved && !isPurchased && (
-          <Button
-            className="w-full mt-3"
-            size="sm"
-            variant="secondary"
-            onClick={handleReserve}
-            disabled={isReserving}
-          >
-            {isReserving ? 'Reserving...' : 'Reserve This Gift'}
-          </Button>
+        {/* Actions for signed-in non-owners */}
+        {isSignedIn && !isOwner && (
+          <div className="mt-3 space-y-2">
+            {!isReserved && !isPurchased && (
+              <Button
+                className="w-full"
+                size="sm"
+                variant="secondary"
+                onClick={handleReserve}
+                disabled={reserveItem.isPending}
+              >
+                {reserveItem.isPending ? 'Reserving...' : 'Reserve This Gift'}
+              </Button>
+            )}
+
+            {isMyReservation && isReserved && !isPurchased && (
+              <div className="space-y-2">
+                <Button
+                  className="w-full"
+                  size="sm"
+                  onClick={handleMarkPurchased}
+                  disabled={markAsPurchased.isPending}
+                >
+                  <ShoppingBag className="h-4 w-4 mr-2" />
+                  {markAsPurchased.isPending ? 'Saving...' : "I've Bought This"}
+                </Button>
+                <Button
+                  className="w-full text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                  size="sm"
+                  variant="outline"
+                  onClick={handleUnreserve}
+                  disabled={unreserveItem.isPending}
+                >
+                  {unreserveItem.isPending ? 'Canceling...' : 'Cancel Reservation'}
+                </Button>
+              </div>
+            )}
+          </div>
         )}
       </CardContent>
     </Card>
