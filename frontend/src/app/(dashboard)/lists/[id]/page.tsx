@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { ArrowLeft, Plus, Share2, Settings, ExternalLink, MoreHorizontal, Edit, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,16 +14,89 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useWishlist } from '@/hooks/use-wishlists';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { useWishlist, useDeleteWishlist, useDeleteWishlistItem } from '@/hooks/use-wishlists';
 import { AddItemDialog } from '@/components/wishlists/add-item-dialog';
+import { EditItemDialog } from '@/components/wishlists/edit-item-dialog';
 import { ShareDialog } from '@/components/wishlists/share-dialog';
+import { useToast } from '@/components/ui/use-toast';
 import { formatCurrency } from '@/lib/utils';
+import type { WishlistItem } from '@/types';
 
 export default function WishlistDetailPage({ params }: { params: { id: string } }) {
   const { id } = params;
+  const router = useRouter();
+  const { toast } = useToast();
   const { data: wishlist, isLoading } = useWishlist(id);
+  const deleteWishlist = useDeleteWishlist();
+  const deleteItem = useDeleteWishlistItem();
+
   const [showAddItem, setShowAddItem] = useState(false);
   const [showShare, setShowShare] = useState(false);
+  const [showEditItem, setShowEditItem] = useState(false);
+  const [editingItem, setEditingItem] = useState<WishlistItem | null>(null);
+  const [showDeleteWishlist, setShowDeleteWishlist] = useState(false);
+  const [showDeleteItem, setShowDeleteItem] = useState(false);
+  const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
+
+  const handleEditItem = (item: WishlistItem) => {
+    setEditingItem(item);
+    setShowEditItem(true);
+  };
+
+  const handleDeleteItemClick = (itemId: string) => {
+    setDeletingItemId(itemId);
+    setShowDeleteItem(true);
+  };
+
+  const handleDeleteItem = async () => {
+    if (!deletingItemId) return;
+
+    try {
+      await deleteItem.mutateAsync({ wishlistId: id, itemId: deletingItemId });
+      toast({
+        title: 'Success',
+        description: 'Item removed from wishlist.',
+      });
+    } catch {
+      toast({
+        title: 'Error',
+        description: 'Failed to remove item. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setShowDeleteItem(false);
+      setDeletingItemId(null);
+    }
+  };
+
+  const handleDeleteWishlist = async () => {
+    try {
+      await deleteWishlist.mutateAsync(id);
+      toast({
+        title: 'Success',
+        description: 'Wishlist deleted successfully.',
+      });
+      router.push('/lists');
+    } catch {
+      toast({
+        title: 'Error',
+        description: 'Failed to delete wishlist. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setShowDeleteWishlist(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -94,11 +168,16 @@ export default function WishlistDetailPage({ params }: { params: { id: string } 
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem>
-                <Edit className="h-4 w-4 mr-2" />
-                Edit Details
+              <DropdownMenuItem asChild>
+                <Link href={`/lists/${id}/edit`}>
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit Details
+                </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem className="text-destructive">
+              <DropdownMenuItem
+                className="text-destructive"
+                onClick={() => setShowDeleteWishlist(true)}
+              >
                 <Trash2 className="h-4 w-4 mr-2" />
                 Delete List
               </DropdownMenuItem>
@@ -130,11 +209,14 @@ export default function WishlistDetailPage({ params }: { params: { id: string } 
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleEditItem(item)}>
                         <Edit className="h-4 w-4 mr-2" />
                         Edit
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="text-destructive">
+                      <DropdownMenuItem
+                        className="text-destructive"
+                        onClick={() => handleDeleteItemClick(item.id)}
+                      >
                         <Trash2 className="h-4 w-4 mr-2" />
                         Remove
                       </DropdownMenuItem>
@@ -195,11 +277,59 @@ export default function WishlistDetailPage({ params }: { params: { id: string } 
         onOpenChange={setShowAddItem}
         wishlistId={id}
       />
+      <EditItemDialog
+        open={showEditItem}
+        onOpenChange={setShowEditItem}
+        wishlistId={id}
+        item={editingItem}
+      />
       <ShareDialog
         open={showShare}
         onOpenChange={setShowShare}
         wishlist={wishlist}
       />
+
+      {/* Delete Item Confirmation */}
+      <AlertDialog open={showDeleteItem} onOpenChange={setShowDeleteItem}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove Item</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to remove this item from your wishlist? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteItem}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteItem.isPending ? 'Removing...' : 'Remove'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Wishlist Confirmation */}
+      <AlertDialog open={showDeleteWishlist} onOpenChange={setShowDeleteWishlist}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Wishlist</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this wishlist? All items will be permanently removed. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteWishlist}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteWishlist.isPending ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

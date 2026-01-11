@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { Plus, Gift, MoreHorizontal, Share2, Trash2, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -10,12 +11,55 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
-import { useWishlists } from '@/hooks/use-wishlists';
+import { useWishlists, useDeleteWishlist } from '@/hooks/use-wishlists';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useToast } from '@/components/ui/use-toast';
 
 export default function ListsPage() {
   const { data: wishlists, isLoading } = useWishlists();
+  const deleteWishlist = useDeleteWishlist();
+  const { toast } = useToast();
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deletingWishlistId, setDeletingWishlistId] = useState<string | null>(null);
+
+  const handleDeleteClick = (e: React.MouseEvent, wishlistId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDeletingWishlistId(wishlistId);
+    setShowDeleteDialog(true);
+  };
+
+  const handleDelete = async () => {
+    if (!deletingWishlistId) return;
+
+    try {
+      await deleteWishlist.mutateAsync(deletingWishlistId);
+      toast({
+        title: 'Success',
+        description: 'Wishlist deleted successfully.',
+      });
+    } catch {
+      toast({
+        title: 'Error',
+        description: 'Failed to delete wishlist. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setShowDeleteDialog(false);
+      setDeletingWishlistId(null);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -78,15 +122,22 @@ export default function ListsPage() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem>
-                        <Edit className="h-4 w-4 mr-2" />
-                        Edit
+                      <DropdownMenuItem asChild>
+                        <Link href={`/lists/${list.id}/edit`} onClick={(e) => e.stopPropagation()}>
+                          <Edit className="h-4 w-4 mr-2" />
+                          Edit
+                        </Link>
                       </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <Share2 className="h-4 w-4 mr-2" />
-                        Share
+                      <DropdownMenuItem asChild>
+                        <Link href={`/lists/${list.id}`} onClick={(e) => e.stopPropagation()}>
+                          <Share2 className="h-4 w-4 mr-2" />
+                          Share
+                        </Link>
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="text-destructive">
+                      <DropdownMenuItem
+                        className="text-destructive"
+                        onClick={(e) => handleDeleteClick(e, list.id)}
+                      >
                         <Trash2 className="h-4 w-4 mr-2" />
                         Delete
                       </DropdownMenuItem>
@@ -114,6 +165,26 @@ export default function ListsPage() {
           </CardContent>
         </Card>
       )}
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Wishlist</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this wishlist? All items will be permanently removed. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteWishlist.isPending ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

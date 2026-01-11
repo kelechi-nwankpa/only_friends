@@ -110,6 +110,52 @@ export function useAddWishlistItem() {
   });
 }
 
+export function useUpdateWishlistItem() {
+  const queryClient = useQueryClient();
+  const { getToken } = useAuth();
+
+  return useMutation({
+    mutationFn: async ({
+      wishlistId,
+      itemId,
+      data,
+    }: {
+      wishlistId: string;
+      itemId: string;
+      data: import('@/types').UpdateWishlistItemInput;
+    }) => {
+      const token = await getToken();
+      api.setToken(token);
+      return api.updateWishlistItem(wishlistId, itemId, data);
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['wishlists', variables.wishlistId] });
+    },
+  });
+}
+
+export function useDeleteWishlistItem() {
+  const queryClient = useQueryClient();
+  const { getToken } = useAuth();
+
+  return useMutation({
+    mutationFn: async ({
+      wishlistId,
+      itemId,
+    }: {
+      wishlistId: string;
+      itemId: string;
+    }) => {
+      const token = await getToken();
+      api.setToken(token);
+      return api.deleteWishlistItem(wishlistId, itemId);
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['wishlists', variables.wishlistId] });
+    },
+  });
+}
+
 export function useShareWishlist() {
   const { getToken } = useAuth();
 
