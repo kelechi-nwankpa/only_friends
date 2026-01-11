@@ -226,18 +226,25 @@ class ApiClient {
   }
 
   // Sharing
-  async shareWishlist(
-    wishlistId: string,
-    data: { email?: string; permission?: 'VIEW' | 'EDIT' }
-  ) {
-    return this.request<{ shareUrl: string }>(`/wishlists/${wishlistId}/share`, {
-      method: 'POST',
-      body: JSON.stringify(data),
+  async generateShareLink(wishlistId: string) {
+    const response = await this.request<{ success: boolean; data: { shareSlug: string; shareUrl: string } }>(
+      `/wishlists/${wishlistId}/share-link`,
+      { method: 'POST' }
+    );
+    return response.data;
+  }
+
+  async revokeShareLink(wishlistId: string) {
+    return this.request<void>(`/wishlists/${wishlistId}/share-link`, {
+      method: 'DELETE',
     });
   }
 
-  async getSharedWishlist(token: string) {
-    return this.request<import('@/types').Wishlist>(`/shared/wishlists/${token}`);
+  async getSharedWishlist(slug: string) {
+    const response = await this.request<{ success: boolean; data: import('@/types').Wishlist }>(
+      `/public/lists/${slug}`
+    );
+    return response.data;
   }
 
   // AI Suggestions

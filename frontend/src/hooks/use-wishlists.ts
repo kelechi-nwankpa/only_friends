@@ -156,22 +156,42 @@ export function useDeleteWishlistItem() {
   });
 }
 
-export function useShareWishlist() {
+export function useGenerateShareLink() {
+  const queryClient = useQueryClient();
   const { getToken } = useAuth();
 
   return useMutation({
-    mutationFn: async ({
-      wishlistId,
-      email,
-      permission,
-    }: {
-      wishlistId: string;
-      email?: string;
-      permission?: 'VIEW' | 'EDIT';
-    }) => {
+    mutationFn: async (wishlistId: string) => {
       const token = await getToken();
       api.setToken(token);
-      return api.shareWishlist(wishlistId, { email, permission });
+      return api.generateShareLink(wishlistId);
     },
+    onSuccess: (_, wishlistId) => {
+      queryClient.invalidateQueries({ queryKey: ['wishlists', wishlistId] });
+    },
+  });
+}
+
+export function useRevokeShareLink() {
+  const queryClient = useQueryClient();
+  const { getToken } = useAuth();
+
+  return useMutation({
+    mutationFn: async (wishlistId: string) => {
+      const token = await getToken();
+      api.setToken(token);
+      return api.revokeShareLink(wishlistId);
+    },
+    onSuccess: (_, wishlistId) => {
+      queryClient.invalidateQueries({ queryKey: ['wishlists', wishlistId] });
+    },
+  });
+}
+
+export function useSharedWishlist(slug: string) {
+  return useQuery({
+    queryKey: ['shared-wishlist', slug],
+    queryFn: () => api.getSharedWishlist(slug),
+    enabled: !!slug,
   });
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Copy, Check, Mail, Link as LinkIcon } from 'lucide-react';
+import { Copy, Check, Link as LinkIcon, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,18 +12,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useShareWishlist } from '@/hooks/use-wishlists';
+import { useGenerateShareLink, useRevokeShareLink } from '@/hooks/use-wishlists';
 import { useToast } from '@/components/ui/use-toast';
 import type { Wishlist } from '@/types';
-import { generateShareUrl } from '@/lib/utils';
 
 interface ShareDialogProps {
   open: boolean;
@@ -33,18 +24,18 @@ interface ShareDialogProps {
 
 export function ShareDialog({ open, onOpenChange, wishlist }: ShareDialogProps) {
   const { toast } = useToast();
-  const shareWishlist = useShareWishlist();
+  const generateLink = useGenerateShareLink();
+  const revokeLink = useRevokeShareLink();
 
-  const [email, setEmail] = useState('');
-  const [permission, setPermission] = useState<'VIEW' | 'EDIT'>('VIEW');
   const [copied, setCopied] = useState(false);
-  const [shareUrl, setShareUrl] = useState('');
 
-  const publicUrl = generateShareUrl(wishlist.id);
+  // Check if wishlist already has a share link
+  const existingShareUrl = wishlist.shareSlug
+    ? `${typeof window !== 'undefined' ? window.location.origin : ''}/list/${wishlist.shareSlug}`
+    : null;
 
-  const handleCopyLink = async () => {
-    const urlToCopy = shareUrl || publicUrl;
-    await navigator.clipboard.writeText(urlToCopy);
+  const handleCopyLink = async (url: string) => {
+    await navigator.clipboard.writeText(url);
     setCopied(true);
     toast({
       title: 'Link copied',
@@ -55,15 +46,15 @@ export function ShareDialog({ open, onOpenChange, wishlist }: ShareDialogProps) 
 
   const handleGenerateLink = async () => {
     try {
-      const result = await shareWishlist.mutateAsync({
-        wishlistId: wishlist.id,
-        permission,
-      });
-      setShareUrl(result.shareUrl);
+      const result = await generateLink.mutateAsync(wishlist.id);
       toast({
         title: 'Link generated',
         description: 'A shareable link has been created',
       });
+      // Copy to clipboard automatically
+      await navigator.clipboard.writeText(result.shareUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     } catch {
       toast({
         title: 'Error',
@@ -73,31 +64,17 @@ export function ShareDialog({ open, onOpenChange, wishlist }: ShareDialogProps) 
     }
   };
 
-  const handleSendInvite = async () => {
-    if (!email) {
-      toast({
-        title: 'Error',
-        description: 'Please enter an email address',
-        variant: 'destructive',
-      });
-      return;
-    }
-
+  const handleRevokeLink = async () => {
     try {
-      await shareWishlist.mutateAsync({
-        wishlistId: wishlist.id,
-        email,
-        permission,
-      });
+      await revokeLink.mutateAsync(wishlist.id);
       toast({
-        title: 'Invite sent',
-        description: `An invitation has been sent to ${email}`,
+        title: 'Link revoked',
+        description: 'The share link has been disabled',
       });
-      setEmail('');
     } catch {
       toast({
         title: 'Error',
-        description: 'Failed to send invitation',
+        description: 'Failed to revoke share link',
         variant: 'destructive',
       });
     }
@@ -109,116 +86,75 @@ export function ShareDialog({ open, onOpenChange, wishlist }: ShareDialogProps) 
         <DialogHeader>
           <DialogTitle>Share &quot;{wishlist.title}&quot;</DialogTitle>
           <DialogDescription>
-            Share your wishlist via link or email invitation.
+            Generate a link to share your wishlist with friends and family.
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue="link" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="link" className="gap-2">
-              <LinkIcon className="h-4 w-4" />
-              Share Link
-            </TabsTrigger>
-            <TabsTrigger value="email" className="gap-2">
-              <Mail className="h-4 w-4" />
-              Email Invite
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="link" className="space-y-4">
-            {wishlist.isPublic ? (
+        <div className="space-y-4">
+          {existingShareUrl ? (
+            <div className="space-y-4">
               <div className="space-y-2">
-                <Label>Public Link</Label>
+                <Label>Share Link</Label>
                 <div className="flex gap-2">
-                  <Input value={publicUrl} readOnly />
-                  <Button variant="outline" size="icon" onClick={handleCopyLink}>
+                  <Input value={existingShareUrl} readOnly className="font-mono text-sm" />
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => handleCopyLink(existingShareUrl)}
+                  >
                     {copied ? (
-                      <Check className="h-4 w-4" />
+                      <Check className="h-4 w-4 text-green-500" />
                     ) : (
                       <Copy className="h-4 w-4" />
                     )}
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Anyone with this link can view your wishlist
+                  Anyone with this link can view your wishlist and reserve gifts
                 </p>
               </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Permission Level</Label>
-                  <Select value={permission} onValueChange={(v) => setPermission(v as typeof permission)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="VIEW">Can view only</SelectItem>
-                      <SelectItem value="EDIT">Can reserve gifts</SelectItem>
-                    </SelectContent>
-                  </Select>
+
+              <div className="flex justify-between items-center pt-2 border-t">
+                <div>
+                  <p className="text-sm font-medium">Revoke access</p>
+                  <p className="text-xs text-muted-foreground">
+                    Disable this link permanently
+                  </p>
                 </div>
-
-                {shareUrl ? (
-                  <div className="space-y-2">
-                    <Label>Share Link</Label>
-                    <div className="flex gap-2">
-                      <Input value={shareUrl} readOnly />
-                      <Button variant="outline" size="icon" onClick={handleCopyLink}>
-                        {copied ? (
-                          <Check className="h-4 w-4" />
-                        ) : (
-                          <Copy className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <Button
-                    className="w-full"
-                    onClick={handleGenerateLink}
-                    disabled={shareWishlist.isPending}
-                  >
-                    Generate Share Link
-                  </Button>
-                )}
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleRevokeLink}
+                  disabled={revokeLink.isPending}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  {revokeLink.isPending ? 'Revoking...' : 'Revoke'}
+                </Button>
               </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="email" className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email Address</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="friend@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
             </div>
-
-            <div className="space-y-2">
-              <Label>Permission Level</Label>
-              <Select value={permission} onValueChange={(v) => setPermission(v as typeof permission)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="VIEW">Can view only</SelectItem>
-                  <SelectItem value="EDIT">Can reserve gifts</SelectItem>
-                </SelectContent>
-              </Select>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center justify-center py-8 border-2 border-dashed rounded-lg">
+                <div className="text-center">
+                  <LinkIcon className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
+                  <p className="text-sm text-muted-foreground mb-4">
+                    No share link exists yet
+                  </p>
+                  <Button
+                    onClick={handleGenerateLink}
+                    disabled={generateLink.isPending}
+                  >
+                    {generateLink.isPending ? 'Generating...' : 'Generate Share Link'}
+                  </Button>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground text-center">
+                Once generated, anyone with the link can view your wishlist and reserve gifts.
+                The list owner (you) will never see who reserved what - keeping gifts a surprise!
+              </p>
             </div>
-
-            <Button
-              className="w-full"
-              onClick={handleSendInvite}
-              disabled={shareWishlist.isPending || !email}
-            >
-              {shareWishlist.isPending ? 'Sending...' : 'Send Invitation'}
-            </Button>
-          </TabsContent>
-        </Tabs>
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   );
