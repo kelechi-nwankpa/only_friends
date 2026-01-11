@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Plus, Share2, Settings, ExternalLink, MoreHorizontal, Edit, Trash2 } from 'lucide-react';
+import { ArrowLeft, Plus, Share2, Settings, ExternalLink, MoreHorizontal, Edit, Trash2, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -190,15 +190,23 @@ export default function WishlistDetailPage({ params }: { params: { id: string } 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {wishlist.items.map((item) => (
             <Card key={item.id} className="group relative overflow-hidden">
-              {item.imageUrl && (
-                <div className="aspect-video w-full overflow-hidden bg-muted">
+              <div className="aspect-video w-full overflow-hidden bg-muted flex items-center justify-center">
+                {item.imageUrl ? (
                   <img
                     src={item.imageUrl}
                     alt={item.title}
                     className="h-full w-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                      e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                    }}
                   />
+                ) : null}
+                <div className={`flex flex-col items-center justify-center text-muted-foreground ${item.imageUrl ? 'hidden' : ''}`}>
+                  <Package className="h-12 w-12 mb-2" />
+                  <span className="text-xs">No image</span>
                 </div>
-              )}
+              </div>
               <CardHeader className="pb-2">
                 <div className="flex items-start justify-between">
                   <CardTitle className="text-base line-clamp-2">{item.title}</CardTitle>
