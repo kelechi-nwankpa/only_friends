@@ -241,7 +241,10 @@ export type CreateExchangeInput = {
   name: string;
   description?: string;
   exchangeDate?: string;
-  budget?: number;
+  drawDate?: string;
+  budgetMin?: number;
+  budgetMax?: number;
   currency?: string;
   groupId?: string;
+  isIncognito?: boolean;
 };

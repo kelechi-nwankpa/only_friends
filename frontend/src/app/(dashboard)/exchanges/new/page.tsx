@@ -53,10 +53,13 @@ export default function NewExchangePage() {
       const response = await createExchange.mutateAsync({
         name,
         description: description || undefined,
-        budget: budgetMax ? parseFloat(budgetMax) : undefined,
+        budgetMin: budgetMin ? parseFloat(budgetMin) : undefined,
+        budgetMax: budgetMax ? parseFloat(budgetMax) : undefined,
         exchangeDate: exchangeDate || undefined,
+        drawDate: drawDate || undefined,
         currency,
         groupId: groupId || undefined,
+        isIncognito,
       });
 
       toast({
@@ -130,12 +133,12 @@ export default function NewExchangePage() {
             {groups && groups.length > 0 && (
               <div className="space-y-2">
                 <Label htmlFor="group">Link to Group (Optional)</Label>
-                <Select value={groupId} onValueChange={setGroupId}>
+                <Select value={groupId || 'none'} onValueChange={(val) => setGroupId(val === 'none' ? '' : val)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select a group" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No group</SelectItem>
+                    <SelectItem value="none">No group</SelectItem>
                     {groups.map((group) => (
                       <SelectItem key={group.id} value={group.id}>
                         {group.name}

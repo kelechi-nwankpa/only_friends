@@ -1,6 +1,12 @@
 import { z } from 'zod';
 import { uuidSchema, emailSchema, phoneSchema, priceSchema, currencySchema } from './common.validator.js';
 
+// Accept both date-only (YYYY-MM-DD) and full datetime formats
+const dateStringSchema = z.string().refine(
+  (val) => !isNaN(Date.parse(val)),
+  { message: 'Invalid date format' }
+);
+
 export const createExchangeSchema = z.object({
   name: z.string().min(1).max(100),
   description: z.string().max(500).optional(),
@@ -8,8 +14,8 @@ export const createExchangeSchema = z.object({
   budgetMin: priceSchema,
   budgetMax: priceSchema,
   currency: currencySchema,
-  drawDate: z.string().datetime().optional(),
-  exchangeDate: z.string().datetime().optional(),
+  drawDate: dateStringSchema.optional(),
+  exchangeDate: dateStringSchema.optional(),
   isIncognito: z.boolean().default(false),
 });
 
@@ -19,8 +25,8 @@ export const updateExchangeSchema = z.object({
   budgetMin: priceSchema.nullable(),
   budgetMax: priceSchema.nullable(),
   currency: currencySchema.optional(),
-  drawDate: z.string().datetime().optional().nullable(),
-  exchangeDate: z.string().datetime().optional().nullable(),
+  drawDate: dateStringSchema.optional().nullable(),
+  exchangeDate: dateStringSchema.optional().nullable(),
   isIncognito: z.boolean().optional(),
 });
 
