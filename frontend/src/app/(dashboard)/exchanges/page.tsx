@@ -59,20 +59,20 @@ export default function ExchangesPage() {
                     <CardTitle className="text-lg">{exchange.name}</CardTitle>
                     <Badge
                       variant={
-                        exchange.status === 'ACTIVE'
+                        exchange.status === 'open'
+                          ? 'outline'
+                          : exchange.status === 'drawn'
                           ? 'default'
-                          : exchange.status === 'DRAWING_COMPLETE'
-                          ? 'secondary'
-                          : 'outline'
+                          : 'secondary'
                       }
                     >
-                      {exchange.status === 'ACTIVE'
-                        ? 'Active'
-                        : exchange.status === 'DRAWING_COMPLETE'
-                        ? 'Drawing Done'
-                        : exchange.status === 'COMPLETED'
+                      {exchange.status === 'open'
+                        ? 'Open'
+                        : exchange.status === 'drawn'
+                        ? 'Names Drawn'
+                        : exchange.status === 'completed'
                         ? 'Completed'
-                        : 'Draft'}
+                        : 'Archived'}
                     </Badge>
                   </div>
                   <CardDescription>
@@ -89,13 +89,17 @@ export default function ExchangesPage() {
                     </span>
                     <span className="flex items-center gap-1">
                       <Users className="h-4 w-4" />
-                      {exchange._count?.participants || 0}
+                      {exchange.participantCount || exchange._count?.participants || 0}
                     </span>
                   </div>
                   {exchange.budget && (
                     <div className="flex items-center gap-1 text-sm">
                       <Gift className="h-4 w-4 text-primary" />
-                      Budget: {formatCurrency(exchange.budget)}
+                      Budget: {typeof exchange.budget === 'number'
+                        ? formatCurrency(exchange.budget)
+                        : exchange.budget.max
+                          ? formatCurrency(exchange.budget.max, exchange.budget.currency)
+                          : 'No limit'}
                     </div>
                   )}
                 </CardContent>

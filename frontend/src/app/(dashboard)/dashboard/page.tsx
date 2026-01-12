@@ -7,13 +7,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Skeleton } from '@/components/ui/skeleton';
 import { useWishlists } from '@/hooks/use-wishlists';
 import { useGroups } from '@/hooks/use-groups';
+import { useExchanges } from '@/hooks/use-exchanges';
 
 export default function DashboardPage() {
   const { data: wishlists, isLoading: wishlistsLoading } = useWishlists();
   const { data: groups, isLoading: groupsLoading } = useGroups();
+  const { data: exchanges, isLoading: exchangesLoading } = useExchanges();
 
   const wishlistCount = wishlists?.length ?? 0;
   const groupCount = groups?.length ?? 0;
+  const exchangeCount = exchanges?.length ?? 0;
   const recentWishlists = wishlists?.slice(0, 3) ?? [];
 
   return (
@@ -73,9 +76,13 @@ export default function DashboardPage() {
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">0</div>
+            {exchangesLoading ? (
+              <Skeleton className="h-8 w-16" />
+            ) : (
+              <div className="text-2xl font-bold">{exchangeCount}</div>
+            )}
             <p className="text-xs text-muted-foreground">
-              upcoming exchanges
+              active exchanges
             </p>
           </CardContent>
         </Card>

@@ -2,18 +2,11 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@clerk/nextjs';
-import { useEffect } from 'react';
 import { api } from '@/lib/api';
 import type { Wishlist, CreateWishlistInput, UpdateWishlistInput } from '@/types';
 
 export function useWishlists() {
-  const { getToken } = useAuth();
-
-  useEffect(() => {
-    getToken().then((token) => {
-      api.setToken(token);
-    });
-  }, [getToken]);
+  const { getToken, isLoaded, isSignedIn } = useAuth();
 
   return useQuery({
     queryKey: ['wishlists'],
@@ -22,6 +15,7 @@ export function useWishlists() {
       api.setToken(token);
       return api.getWishlists();
     },
+    enabled: isLoaded && isSignedIn,
   });
 }
 

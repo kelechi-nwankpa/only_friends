@@ -6,7 +6,7 @@ import { api } from '@/lib/api';
 import type { CreateGroupInput } from '@/types';
 
 export function useGroups() {
-  const { getToken } = useAuth();
+  const { getToken, isLoaded, isSignedIn } = useAuth();
 
   return useQuery({
     queryKey: ['groups'],
@@ -16,6 +16,7 @@ export function useGroups() {
       const response = await api.getGroups();
       return response.data.groups;
     },
+    enabled: isLoaded && isSignedIn,
   });
 }
 

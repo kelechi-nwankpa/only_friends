@@ -129,17 +129,25 @@ export interface Exchange {
   name: string;
   description?: string;
   exchangeDate?: string;
-  budget?: number;
-  currency: string;
-  status: 'DRAFT' | 'ACTIVE' | 'DRAWING_COMPLETE' | 'COMPLETED' | 'CANCELLED';
+  status: 'open' | 'drawn' | 'completed' | 'archived';
   groupId?: string;
-  group?: Group;
-  createdById: string;
+  group?: { id: string; name: string };
+  createdById?: string;
   createdBy?: User;
   participants?: ExchangeParticipant[];
   exclusions?: ExchangeExclusion[];
-  createdAt: string;
-  updatedAt: string;
+  exclusionCount?: number;
+  isIncognito?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  // Budget can come in two formats from backend
+  budget?: number | { min?: number; max?: number; currency?: string };
+  currency?: string;
+  // Dates can come in different format
+  dates?: { draw?: string; exchange?: string };
+  // For list view
+  participantCount?: number;
+  hasRevealed?: boolean;
   _count?: {
     participants: number;
     exclusions: number;
@@ -148,25 +156,31 @@ export interface Exchange {
 
 export interface ExchangeParticipant {
   id: string;
-  exchangeId: string;
+  exchangeId?: string;
   userId?: string;
-  user?: User;
+  user?: { id: string; name?: string; avatarUrl?: string };
   name: string;
   email?: string;
+  phone?: string;
   wishlistId?: string;
-  wishlist?: Wishlist;
+  wishlist?: { id: string; title: string };
+  hasWishlist?: boolean;
+  hasJoined?: boolean;
+  hasRevealed?: boolean;
+  magicLink?: string;
   assignedToId?: string;
   assignedTo?: ExchangeParticipant;
-  joinedAt: string;
+  joinedAt?: string;
 }
 
 export interface ExchangeExclusion {
   id: string;
-  exchangeId: string;
-  participantId: string;
-  participant?: ExchangeParticipant;
-  excludedParticipantId: string;
-  excludedParticipant?: ExchangeParticipant;
+  exchangeId?: string;
+  participantA?: { id: string; name: string };
+  participantB?: { id: string; name: string };
+  participantAId?: string;
+  participantBId?: string;
+  reason?: string;
 }
 
 export interface MagicLink {

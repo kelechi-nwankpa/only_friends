@@ -200,29 +200,29 @@ class ApiClient {
 
   // Exchanges
   async getExchanges() {
-    return this.request<{ data: import('@/types').Exchange[] }>('/exchanges');
+    return this.request<{ success: boolean; data: { exchanges: import('@/types').Exchange[] } }>('/exchanges');
   }
 
   async getExchange(id: string) {
-    return this.request<import('@/types').Exchange>(`/exchanges/${id}`);
+    return this.request<{ success: boolean; data: import('@/types').Exchange }>(`/exchanges/${id}`);
   }
 
   async createExchange(data: import('@/types').CreateExchangeInput) {
-    return this.request<import('@/types').Exchange>('/exchanges', {
+    return this.request<{ success: boolean; data: import('@/types').Exchange }>('/exchanges', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
   async updateExchange(id: string, data: Partial<import('@/types').CreateExchangeInput>) {
-    return this.request<import('@/types').Exchange>(`/exchanges/${id}`, {
+    return this.request<{ success: boolean; data: import('@/types').Exchange }>(`/exchanges/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
   }
 
   async deleteExchange(id: string) {
-    return this.request<void>(`/exchanges/${id}`, {
+    return this.request<{ success: boolean }>(`/exchanges/${id}`, {
       method: 'DELETE',
     });
   }
@@ -237,8 +237,61 @@ class ApiClient {
   }
 
   async getMyAssignment(exchangeId: string) {
-    return this.request<import('@/types').ExchangeParticipant>(
+    return this.request<{ success: boolean; data: { receiver: { id: string; name: string; wishlistId?: string; wishlistTitle?: string } | null; hasRevealed: boolean } }>(
       `/exchanges/${exchangeId}/my-assignment`
+    );
+  }
+
+  async addParticipant(exchangeId: string, data: { name: string; email?: string; phone?: string }) {
+    return this.request<{ success: boolean; data: { participant: import('@/types').ExchangeParticipant; magicLink: string } }>(
+      `/exchanges/${exchangeId}/participants`,
+      {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }
+    );
+  }
+
+  async removeParticipant(exchangeId: string, participantId: string) {
+    return this.request<{ success: boolean }>(
+      `/exchanges/${exchangeId}/participants/${participantId}`,
+      {
+        method: 'DELETE',
+      }
+    );
+  }
+
+  async getExclusions(exchangeId: string) {
+    return this.request<{ success: boolean; data: { exclusions: Array<{ id: string; participantA: { id: string; name: string }; participantB: { id: string; name: string }; reason?: string }> } }>(
+      `/exchanges/${exchangeId}/exclusions`
+    );
+  }
+
+  async addExclusion(exchangeId: string, data: { participantAId: string; participantBId: string; reason?: string }) {
+    return this.request<{ success: boolean; data: import('@/types').ExchangeExclusion }>(
+      `/exchanges/${exchangeId}/exclusions`,
+      {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }
+    );
+  }
+
+  async removeExclusion(exchangeId: string, exclusionId: string) {
+    return this.request<{ success: boolean }>(
+      `/exchanges/${exchangeId}/exclusions/${exclusionId}`,
+      {
+        method: 'DELETE',
+      }
+    );
+  }
+
+  async revealAssignment(exchangeId: string) {
+    return this.request<{ success: boolean }>(
+      `/exchanges/${exchangeId}/reveal`,
+      {
+        method: 'POST',
+      }
     );
   }
 
@@ -283,6 +336,42 @@ class ApiClient {
       `/public/lists/${slug}`
     );
     return response.data;
+  }
+
+  // Magic Links
+  async verifyMagicLink(token: string) {
+    return this.request<{
+      success: boolean;
+      data: {
+        type: 'exchange';
+        exchange: {
+          id: string;
+          name: string;
+          description?: string;
+          status: string;
+          exchangeDate?: string;
+        };
+        participant: {
+          id: string;
+          name: string;
+          hasRevealed: boolean;
+        };
+        assignment?: {
+          receiver: {
+            id: string;
+            name: string;
+            wishlistId?: string;
+            wishlistTitle?: string;
+          };
+        };
+      };
+    }>(`/magic/${token}`);
+  }
+
+  async revealMagicLinkAssignment(token: string) {
+    return this.request<{ success: boolean }>(`/magic/${token}/reveal`, {
+      method: 'POST',
+    });
   }
 
   // AI Suggestions
