@@ -95,6 +95,11 @@ export const getExchange: RequestHandler = async (req, res, next) => {
           include: {
             user: { select: { id: true, name: true, avatarUrl: true } },
             wishlist: { select: { id: true, title: true } },
+            magicLinks: {
+              where: { expiresAt: { gt: new Date() } },
+              take: 1,
+              select: { token: true },
+            },
           },
         },
         exclusions: true,
@@ -142,6 +147,10 @@ export const getExchange: RequestHandler = async (req, res, next) => {
           hasWishlist: !!p.wishlistId,
           hasJoined: !!p.userId,
           user: p.user,
+          // Only include magic link for uninvited participants
+          magicLink: !p.userId && p.magicLinks?.[0]?.token
+            ? `${config.frontendUrl}/magic/${p.magicLinks[0].token}`
+            : undefined,
         })),
         exclusionCount: exchange.exclusions.length,
       },

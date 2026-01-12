@@ -374,6 +374,19 @@ class ApiClient {
     });
   }
 
+  async claimMagicLink(token: string) {
+    return this.request<{
+      success: boolean;
+      data: {
+        message: string;
+        exchangeId: string;
+        exchangeName: string;
+      };
+    }>(`/magic/${token}/claim`, {
+      method: 'POST',
+    });
+  }
+
   // AI Suggestions
   async getGiftSuggestions(params: {
     recipientName?: string;

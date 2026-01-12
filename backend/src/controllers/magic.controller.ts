@@ -1,6 +1,7 @@
 import type { RequestHandler } from 'express';
 import { prisma } from '../config/database.js';
 import { AppError } from '../utils/errors.js';
+import type { AuthenticatedRequest } from '../types/auth.types.js';
 
 /**
  * Validate a magic link token and return exchange context
@@ -99,6 +100,77 @@ export const validateMagicLink: RequestHandler = async (req, res, next) => {
           id: magicLink.user.id,
           name: magicLink.user.name,
         } : null,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Claim a magic link - link the authenticated user to the participant
+ * Requires authentication
+ */
+export const claimMagicLink: RequestHandler = async (req, res, next) => {
+  try {
+    const { user } = req as AuthenticatedRequest;
+    const { token } = req.params;
+
+    const magicLink = await prisma.magicLinkToken.findUnique({
+      where: { token },
+      include: {
+        participant: true,
+        exchange: { select: { id: true, name: true } },
+      },
+    });
+
+    if (!magicLink) {
+      throw AppError.notFound('Invalid or expired magic link');
+    }
+
+    if (magicLink.expiresAt < new Date()) {
+      throw AppError.badRequest('This magic link has expired');
+    }
+
+    // Check if participant is already linked to a different user
+    if (magicLink.participant.userId && magicLink.participant.userId !== user.id) {
+      throw AppError.badRequest('This invite has already been claimed by another user');
+    }
+
+    // Check if this user is already a participant in this exchange
+    const existingParticipation = await prisma.exchangeParticipant.findFirst({
+      where: {
+        exchangeId: magicLink.exchangeId,
+        userId: user.id,
+        id: { not: magicLink.participantId }, // Exclude the current participant being claimed
+      },
+    });
+
+    if (existingParticipation) {
+      throw AppError.badRequest('You are already a participant in this exchange');
+    }
+
+    // Link the user to the participant
+    await prisma.exchangeParticipant.update({
+      where: { id: magicLink.participantId },
+      data: {
+        userId: user.id,
+        email: user.email, // Update email to match the signed-in user
+      },
+    });
+
+    // Also link the magic link token to the user for reference
+    await prisma.magicLinkToken.update({
+      where: { token },
+      data: { userId: user.id },
+    });
+
+    res.json({
+      success: true,
+      data: {
+        message: 'Successfully joined the exchange',
+        exchangeId: magicLink.exchangeId,
+        exchangeName: magicLink.exchange.name,
       },
     });
   } catch (error) {

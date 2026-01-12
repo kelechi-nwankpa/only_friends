@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth, SignInButton } from '@clerk/nextjs';
 import { Gift, CheckCircle, XCircle, Loader2, Eye, LogIn } from 'lucide-react';
@@ -36,60 +36,90 @@ interface MagicLinkData {
 
 export default function MagicLinkPage() {
   const params = useParams();
-  const router = useRouter();
   const { isLoaded, isSignedIn, getToken } = useAuth();
   const token = params.token as string;
+
+  // The current magic link URL - used to redirect back after sign-in
+  const currentUrl = typeof window !== 'undefined' ? window.location.href : `/magic/${token}`;
 
   const [status, setStatus] = useState<'loading' | 'success' | 'reveal' | 'error'>('loading');
   const [data, setData] = useState<MagicLinkData | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
   const [isRevealed, setIsRevealed] = useState(false);
-  const isLoadingRef = useRef(false);
+  const [isClaimed, setIsClaimed] = useState(false);
+  const [isClaimingInProgress, setIsClaimingInProgress] = useState(false);
 
-  const loadMagicLink = async () => {
-    if (isLoadingRef.current) return;
-    isLoadingRef.current = true;
+  // Load magic link data
+  useEffect(() => {
+    const loadMagicLink = async () => {
+      // Don't reload if we already have data
+      if (data) return;
 
-    try {
-      // If user is signed in, use their auth token
-      if (isSignedIn) {
-        const authToken = await getToken();
-        api.setToken(authToken);
-      } else {
-        api.setToken(null);
-      }
+      try {
+        // If user is signed in, use their auth token
+        if (isSignedIn) {
+          const authToken = await getToken();
+          api.setToken(authToken);
+        } else {
+          api.setToken(null);
+        }
 
-      const response = await api.verifyMagicLink(token);
-      setData(response.data);
+        const response = await api.verifyMagicLink(token);
+        setData(response.data);
 
-      if (response.data.exchange.status === 'drawn' && response.data.assignment) {
-        setStatus('reveal');
-      } else {
-        setStatus('success');
-      }
-    } catch (error) {
-      setStatus('error');
-      isLoadingRef.current = false;
-      if (error instanceof Error) {
-        if (error.message.includes('expired')) {
-          setErrorMessage('This magic link has expired');
-        } else if (error.message.includes('Invalid')) {
-          setErrorMessage('This magic link is invalid');
+        if (response.data.exchange.status === 'drawn' && response.data.assignment) {
+          setStatus('reveal');
+        } else {
+          setStatus('success');
+        }
+      } catch (error) {
+        setStatus('error');
+        if (error instanceof Error) {
+          if (error.message.includes('expired')) {
+            setErrorMessage('This magic link has expired');
+          } else if (error.message.includes('Invalid')) {
+            setErrorMessage('This magic link is invalid');
+          } else {
+            setErrorMessage('Failed to verify magic link');
+          }
         } else {
           setErrorMessage('Failed to verify magic link');
         }
-      } else {
-        setErrorMessage('Failed to verify magic link');
       }
-    }
-  };
+    };
 
-  useEffect(() => {
-    if (token && isLoaded && !isLoadingRef.current) {
+    if (token && isLoaded) {
       loadMagicLink();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, isLoaded]);
+  }, [token, isLoaded, isSignedIn, getToken, data]);
+
+  // Separate effect to handle claiming - runs whenever isSignedIn becomes true
+  useEffect(() => {
+    const claimMagicLink = async () => {
+      // Only claim if: signed in, have data, not already claimed, not currently claiming
+      if (!isSignedIn || !data || isClaimed || isClaimingInProgress) {
+        return;
+      }
+
+      setIsClaimingInProgress(true);
+
+      try {
+        const authToken = await getToken();
+        api.setToken(authToken);
+        await api.claimMagicLink(token);
+        setIsClaimed(true);
+        console.log('Magic link claimed successfully');
+      } catch (claimError) {
+        // User may already be linked - that's okay
+        console.log('Claim result:', claimError);
+        setIsClaimed(true); // Mark as claimed to prevent retries
+      } finally {
+        setIsClaimingInProgress(false);
+      }
+    };
+
+    claimMagicLink();
+  }, [isSignedIn, data, isClaimed, isClaimingInProgress, token, getToken]);
 
   const handleReveal = async () => {
     try {
@@ -134,7 +164,7 @@ export default function MagicLinkPage() {
               <Button className="w-full">Go Home</Button>
             </Link>
             {!isSignedIn && (
-              <SignInButton mode="modal">
+              <SignInButton mode="redirect" forceRedirectUrl={currentUrl}>
                 <Button variant="outline" className="w-full gap-2">
                   <LogIn className="h-4 w-4" />
                   Sign In
@@ -192,7 +222,7 @@ export default function MagicLinkPage() {
                       </Button>
                     </Link>
                   ) : (
-                    <SignInButton mode="modal">
+                    <SignInButton mode="redirect" forceRedirectUrl={currentUrl}>
                       <Button variant="outline" className="w-full gap-2">
                         <LogIn className="h-4 w-4" />
                         Sign in to manage your wishlist
@@ -269,7 +299,7 @@ export default function MagicLinkPage() {
               </Link>
             ) : (
               <>
-                <SignInButton mode="modal">
+                <SignInButton mode="redirect" forceRedirectUrl={currentUrl}>
                   <Button className="w-full gap-2">
                     <LogIn className="h-4 w-4" />
                     Sign in to link your wishlist
