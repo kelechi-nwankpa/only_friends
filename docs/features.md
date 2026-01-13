@@ -7,6 +7,7 @@
 | `planned` | Designed, not started |
 | `in-progress` | Currently being built |
 | `complete` | Implemented and working |
+| `partial` | Backend done, frontend incomplete (or vice versa) |
 | `deferred` | Postponed |
 
 ---
@@ -17,101 +18,101 @@
 
 | Feature | Status | Priority | Notes |
 |---------|--------|----------|-------|
-| Email/password signup | `planned` | P0 | Via Clerk |
-| Google OAuth | `planned` | P0 | Via Clerk |
-| Apple OAuth | `planned` | P1 | Via Clerk |
-| Magic Link access (no account) | `planned` | P0 | Custom implementation |
-| User profile management | `planned` | P1 | Name, avatar |
-| Account deletion | `planned` | P2 | GDPR compliance |
+| Email/password signup | `complete` | P0 | Via Clerk |
+| Google OAuth | `complete` | P0 | Via Clerk |
+| Apple OAuth | `complete` | P1 | Via Clerk |
+| Magic Link access (no account) | `complete` | P0 | Full implementation with claim flow |
+| User profile management | `complete` | P1 | Name, avatar |
+| Account deletion | `complete` | P2 | Clerk handles + DB cascade |
 
 ### Wishlists
 
 | Feature | Status | Priority | Notes |
 |---------|--------|----------|-------|
-| Create wishlist | `planned` | P0 | |
-| Edit wishlist | `planned` | P0 | Title, description, type |
-| Delete wishlist | `planned` | P0 | |
-| Archive wishlist | `planned` | P1 | Hide without deleting |
-| Multiple wishlists per user | `planned` | P0 | |
-| Wishlist types | `planned` | P1 | General, birthday, christmas, wedding, baby |
-| Drag-and-drop reorder items | `planned` | P1 | |
+| Create wishlist | `complete` | P0 | |
+| Edit wishlist | `complete` | P0 | Title, description, type |
+| Delete wishlist | `complete` | P0 | |
+| Archive wishlist | `complete` | P1 | `isArchived` flag |
+| Multiple wishlists per user | `complete` | P0 | |
+| Wishlist types | `complete` | P1 | General, birthday, christmas, wedding, baby, home |
+| Drag-and-drop reorder items | `complete` | P1 | `reorderItems` endpoint |
 
 ### Wishlist Items
 
 | Feature | Status | Priority | Notes |
 |---------|--------|----------|-------|
-| Add item manually | `planned` | P0 | Title, notes, price, priority |
-| Add item from URL | `planned` | P0 | Auto-extract metadata |
-| Edit item | `planned` | P0 | |
-| Delete item | `planned` | P0 | |
-| Item priorities | `planned` | P0 | Low, medium, high |
-| Item notes | `planned` | P0 | Owner's notes for givers |
-| Item images | `planned` | P1 | From URL or manual upload |
-| Reorder items | `planned` | P1 | Drag-and-drop |
+| Add item manually | `complete` | P0 | Title, notes, price, priority |
+| Add item from URL | `complete` | P0 | Auto-extract metadata via metascraper |
+| Edit item | `complete` | P0 | |
+| Delete item | `complete` | P0 | |
+| Item priorities | `complete` | P0 | Low, medium, high |
+| Item notes | `complete` | P0 | Owner's notes for givers |
+| Item images | `complete` | P1 | From URL extraction |
+| Reorder items | `complete` | P1 | Position-based ordering |
 
 ### URL Extraction
 
 | Feature | Status | Priority | Notes |
 |---------|--------|----------|-------|
-| Extract title from URL | `planned` | P0 | Using metascraper |
-| Extract image from URL | `planned` | P1 | |
-| Extract price from URL | `planned` | P1 | Best effort, may fail |
-| Manual override always available | `planned` | P0 | When extraction fails |
+| Extract title from URL | `complete` | P0 | Using metascraper |
+| Extract image from URL | `complete` | P1 | |
+| Extract price from URL | `complete` | P1 | Basic regex patterns |
+| Manual override always available | `complete` | P0 | When extraction fails |
 
 ### Sharing & Privacy
 
 | Feature | Status | Priority | Notes |
 |---------|--------|----------|-------|
-| Private wishlists | `planned` | P0 | Only owner sees |
-| Share with groups | `planned` | P0 | |
-| Share with individuals (1-on-1) | `planned` | P0 | Direct sharing |
-| Shareable read-only links | `planned` | P0 | No auth required to view |
-| Revoke share link | `planned` | P1 | |
-| Visibility controls | `planned` | P0 | Private, shared, public |
+| Private wishlists | `complete` | P0 | Default mode |
+| Share with groups | `complete` | P0 | |
+| Share with individuals (1-on-1) | `complete` | P0 | Direct sharing |
+| Shareable read-only links | `complete` | P0 | No auth required to view |
+| Revoke share link | `complete` | P1 | |
+| Visibility controls | `complete` | P0 | Private, shared, public |
 
 ### Gift Reservation
 
 | Feature | Status | Priority | Notes |
 |---------|--------|----------|-------|
-| Reserve item | `planned` | P0 | One-click reserve |
-| Release reservation | `planned` | P0 | |
-| Mark as purchased | `planned` | P0 | |
-| Owner cannot see reservations | `planned` | P0 | **CRITICAL** |
-| Other givers can see reservations | `planned` | P0 | Prevents duplicates |
-| Real-time status sync | `planned` | P1 | Polling initially, WebSocket later |
+| Reserve item | `complete` | P0 | One-click reserve |
+| Release reservation | `complete` | P0 | |
+| Mark as purchased | `complete` | P0 | |
+| Owner cannot see reservations | `complete` | P0 | **CRITICAL** — enforced in backend |
+| Other givers can see reservations | `complete` | P0 | Prevents duplicates |
+| Real-time status sync | `complete` | P1 | React Query invalidation |
 
 ### Groups
 
 | Feature | Status | Priority | Notes |
 |---------|--------|----------|-------|
-| Create group | `planned` | P0 | |
-| Edit group | `planned` | P0 | Name, description |
-| Delete group | `planned` | P0 | Admin only |
-| Invite via code | `planned` | P0 | Shareable link |
-| Join via code | `planned` | P0 | |
-| Member list | `planned` | P0 | |
-| Remove member | `planned` | P1 | Admin only |
-| Admin role | `planned` | P1 | Can manage group |
-| View group members' wishlists | `planned` | P0 | |
+| Create group | `complete` | P0 | |
+| Edit group | `complete` | P0 | Name, description |
+| Delete group | `complete` | P0 | Creator only |
+| Invite via code | `complete` | P0 | Shareable link |
+| Join via code | `complete` | P0 | |
+| Member list | `complete` | P0 | |
+| Remove member | `complete` | P1 | Admin only |
+| Admin role | `complete` | P1 | Can manage group |
+| View group members' wishlists | `complete` | P0 | |
 
 ### Secret Santa / Exchanges
 
 | Feature | Status | Priority | Notes |
 |---------|--------|----------|-------|
-| Create exchange | `planned` | P0 | |
-| Edit exchange | `planned` | P0 | |
-| Delete exchange | `planned` | P0 | |
-| Add participants | `planned` | P0 | Name, email, phone |
-| Generate Magic Links | `planned` | P0 | For each participant |
-| Send invites (email) | `planned` | P0 | Via Resend |
-| Send invites (SMS) | `planned` | P1 | Via Twilio |
-| Exclusions | `planned` | P0 | "Don't match these two" |
-| Draw names | `planned` | P0 | With exclusion validation |
-| View my assignment | `planned` | P0 | Only own assignment |
-| Link wishlist to exchange | `planned` | P0 | |
-| Budget limits | `planned` | P1 | Min/max |
-| Exchange dates | `planned` | P1 | Draw date, exchange date |
-| Exchange status | `planned` | P1 | Open, drawn, completed |
+| Create exchange | `complete` | P0 | |
+| Edit exchange | `complete` | P0 | |
+| Delete exchange | `complete` | P0 | |
+| Add participants | `complete` | P0 | Name, email, phone |
+| Generate Magic Links | `complete` | P0 | Auto-generated per participant |
+| Send invites (email) | `planned` | P0 | TODO: Resend integration |
+| Send invites (SMS) | `planned` | P1 | TODO: Twilio integration |
+| Exclusions | `complete` | P0 | spouse, same_household, custom |
+| Draw names | `complete` | P0 | Backtracking algorithm with validation |
+| View my assignment | `complete` | P0 | Reveal animation |
+| Link wishlist to exchange | `complete` | P0 | |
+| Budget limits | `complete` | P1 | Min/max with currency |
+| Exchange dates | `complete` | P1 | Draw date, exchange date |
+| Exchange status | `complete` | P1 | open → drawn → completed → archived |
 
 ---
 
@@ -121,25 +122,25 @@
 
 | Feature | Status | Priority | Notes |
 |---------|--------|----------|-------|
-| Gift suggestions from description | `planned` | P1 | "12yo nephew, loves Minecraft" |
-| Budget-aware suggestions | `planned` | P1 | |
+| Gift suggestions from description | `partial` | P1 | Backend complete, **frontend uses mock data** |
+| Budget-aware suggestions | `partial` | P1 | Backend supports it |
 | Save/dismiss suggestions | `planned` | P2 | |
-| Add suggestion to wishlist | `planned` | P1 | One-click add |
+| Add suggestion to wishlist | `planned` | P1 | Button exists but not wired |
 
 ### Price Tracking
 
 | Feature | Status | Priority | Notes |
 |---------|--------|----------|-------|
-| Enable price tracking on item | `planned` | P1 | Premium feature |
+| Enable price tracking on item | `partial` | P1 | API exists, no UI |
 | Price history chart | `planned` | P2 | |
-| Price drop alerts | `planned` | P1 | Push/email notification |
-| Daily price checks | `planned` | P1 | Background job |
+| Price drop alerts | `planned` | P1 | No notification trigger |
+| Daily price checks | `planned` | P1 | **No background job implemented** |
 
 ### Gift History
 
 | Feature | Status | Priority | Notes |
 |---------|--------|----------|-------|
-| View gifts given | `planned` | P1 | |
+| View gifts given | `planned` | P1 | Schema exists only |
 | View gifts received | `planned` | P1 | |
 | Log gift manually | `planned` | P2 | |
 | Auto-log from reservations | `planned` | P1 | When marked purchased |
@@ -149,16 +150,16 @@
 
 | Feature | Status | Priority | Notes |
 |---------|--------|----------|-------|
-| In-app notifications | `planned` | P0 | |
-| Push notifications (mobile) | `planned` | P1 | FCM + APNs |
-| Email notifications | `planned` | P1 | Configurable |
+| In-app notifications | `planned` | P0 | Schema exists only |
+| Push notifications (mobile) | `planned` | P1 | No FCM/APNs integration |
+| Email notifications | `planned` | P1 | No Resend integration |
 | Notification preferences | `planned` | P2 | |
 
 ### Privacy Features
 
 | Feature | Status | Priority | Notes |
 |---------|--------|----------|-------|
-| Incognito exchange mode | `planned` | P1 | Auto-delete after event |
+| Incognito exchange mode | `complete` | P1 | `isIncognito` + auto-delete after 30 days |
 | Data export | `planned` | P2 | GDPR |
 | Delete all data | `planned` | P2 | GDPR |
 
@@ -170,10 +171,10 @@
 
 | Feature | Status | Priority | Notes |
 |---------|--------|----------|-------|
-| Scratch-off reveal animation | `planned` | P2 | For assignment reveal |
-| Confetti on purchase | `planned` | P2 | |
-| Card flip animation | `planned` | P2 | |
-| Haptic feedback (mobile) | `planned` | P2 | |
+| Scratch-off reveal animation | `complete` | P2 | Framer Motion |
+| Confetti on purchase | `complete` | P2 | |
+| Card flip animation | `complete` | P2 | |
+| Haptic feedback (mobile) | `planned` | P2 | Mobile only |
 | Dark mode | `planned` | P1 | |
 | Custom themes | `planned` | P2 | Premium |
 
@@ -181,7 +182,7 @@
 
 | Feature | Status | Priority | Notes |
 |---------|--------|----------|-------|
-| Exchange group chat | `planned` | P2 | Ephemeral messages |
+| Exchange group chat | `partial` | P2 | Backend complete, **no frontend UI** |
 | Thank you notes | `planned` | P2 | Send after receiving |
 | Thank you note generator | `planned` | P2 | AI-assisted |
 
@@ -207,7 +208,7 @@
 | Feature | Status | Priority | Notes |
 |---------|--------|----------|-------|
 | Opt-in public profile | `planned` | P2 | |
-| Public wishlist page | `planned` | P2 | |
+| Public wishlist page | `complete` | P2 | Via shareable link |
 | Share on social media | `planned` | P2 | |
 
 ---
@@ -241,20 +242,20 @@
 
 | Feature | Status | Priority | Notes |
 |---------|--------|----------|-------|
-| Image optimization | `planned` | P1 | Next.js Image |
+| Image optimization | `complete` | P1 | Next.js Image |
 | API response caching | `planned` | P2 | Redis (later) |
-| Lazy loading | `planned` | P1 | |
-| Optimistic updates | `planned` | P1 | For reservations |
+| Lazy loading | `complete` | P1 | |
+| Optimistic updates | `complete` | P1 | React Query for reservations |
 
 ### Security
 
 | Feature | Status | Priority | Notes |
 |---------|--------|----------|-------|
-| Rate limiting | `planned` | P0 | |
-| Input validation | `planned` | P0 | Zod |
-| CORS configuration | `planned` | P0 | |
-| Helmet security headers | `planned` | P0 | |
-| Magic Link expiry | `planned` | P0 | 30 days default |
+| Rate limiting | `complete` | P0 | 100 req/15min global, 10 req/min strict |
+| Input validation | `complete` | P0 | Zod schemas |
+| CORS configuration | `complete` | P0 | |
+| Helmet security headers | `complete` | P0 | |
+| Magic Link expiry | `complete` | P0 | 7 days default |
 
 ### Monitoring
 
@@ -273,11 +274,11 @@
 
 | Browser | Status | Notes |
 |---------|--------|-------|
-| Chrome | `planned` | Primary |
-| Firefox | `planned` | |
-| Safari | `planned` | |
-| Edge | `planned` | |
-| Mobile browsers | `planned` | Responsive design |
+| Chrome | `complete` | Primary |
+| Firefox | `complete` | |
+| Safari | `complete` | |
+| Edge | `complete` | |
+| Mobile browsers | `complete` | Responsive design |
 
 ### Mobile
 
@@ -288,45 +289,70 @@
 
 ---
 
-## Implementation Order
+## Implementation Progress
 
-### Phase 1: Foundation
-1. Backend setup (Express, Prisma, PostgreSQL)
-2. Auth integration (Clerk)
-3. Basic CRUD: Users, Wishlists, Items
-4. Reservation system with privacy rules
+### Phase 1: Foundation ✅ COMPLETE
+1. ✅ Backend setup (Express, Prisma, PostgreSQL)
+2. ✅ Auth integration (Clerk)
+3. ✅ Basic CRUD: Users, Wishlists, Items
+4. ✅ Reservation system with privacy rules
 
-### Phase 2: Sharing
-5. Groups (create, join, invite)
-6. Wishlist sharing (groups + individuals)
-7. Public share links
+### Phase 2: Sharing ✅ COMPLETE
+5. ✅ Groups (create, join, invite)
+6. ✅ Wishlist sharing (groups + individuals)
+7. ✅ Public share links
 
-### Phase 3: Exchanges
-8. Exchange creation and management
-9. Participant management
-10. Magic Links
-11. Name drawing algorithm
-12. Assignment reveal
+### Phase 3: Exchanges ✅ COMPLETE
+8. ✅ Exchange creation and management
+9. ✅ Participant management
+10. ✅ Magic Links
+11. ✅ Name drawing algorithm
+12. ✅ Assignment reveal with animations
 
-### Phase 4: Web Frontend
-13. Next.js setup with Clerk
-14. Dashboard, list views
-15. Item management
-16. Group management
-17. Exchange flow
+### Phase 4: Web Frontend ✅ COMPLETE
+13. ✅ Next.js setup with Clerk
+14. ✅ Dashboard, list views
+15. ✅ Item management
+16. ✅ Group management
+17. ✅ Exchange flow
 
-### Phase 5: Polish
-18. URL extraction
-19. Notifications
-20. Micro-interactions
+### Phase 5: Polish 🚧 IN PROGRESS
+18. ✅ URL extraction
+19. ❌ Notifications (schema only)
+20. ✅ Micro-interactions (reveal animations, confetti)
 
-### Phase 6: Growth Features
-21. AI Gift Concierge
-22. Price tracking
-23. Gift history
+### Phase 6: Growth Features 🚧 IN PROGRESS
+21. 🚧 AI Gift Concierge (backend done, frontend mocked)
+22. 🚧 Price tracking (API only, no background job)
+23. ❌ Gift history (schema only)
 
-### Phase 7: Mobile
-24. React Native setup
-25. Core flows
-26. Push notifications
-27. Native features
+### Phase 7: Mobile ❌ NOT STARTED
+24. ❌ React Native setup
+25. ❌ Core flows
+26. ❌ Push notifications
+27. ❌ Native features
+
+---
+
+## Summary Statistics
+
+| Category | Complete | Partial | Planned | Total | Progress |
+|----------|----------|---------|---------|-------|----------|
+| MVP v1.0 | 57 | 0 | 2 | 59 | 97% |
+| Growth v1.1 | 1 | 3 | 16 | 20 | 20% |
+| Polished v1.2 | 4 | 1 | 15 | 20 | 23% |
+| Technical | 8 | 0 | 4 | 12 | 67% |
+| **TOTAL** | **70** | **4** | **37** | **111** | **67%** |
+
+---
+
+## Critical Gaps (Priority Fixes)
+
+| Priority | Feature | Current State | Action Needed |
+|----------|---------|---------------|---------------|
+| **P0** | Email/SMS invites | Not sending | Integrate Resend/Twilio |
+| **P1** | AI Concierge frontend | Uses mock data | Wire to backend API |
+| **P1** | Chat UI | No frontend | Build chat component |
+| **P1** | Price check job | No background job | Implement cron/scheduler |
+| **P1** | Dark mode | Not implemented | Add theme provider |
+| **P2** | Notifications | Schema only | Build notification system |

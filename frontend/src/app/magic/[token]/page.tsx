@@ -4,11 +4,12 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth, SignInButton } from '@clerk/nextjs';
-import { Gift, CheckCircle, XCircle, Loader2, Eye, LogIn } from 'lucide-react';
+import { Gift, CheckCircle, XCircle, Loader2, LogIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { api } from '@/lib/api';
+import { RevealAnimation } from '@/components/exchanges/reveal-animation';
 
 interface MagicLinkData {
   type: 'exchange';
@@ -178,22 +179,18 @@ export default function MagicLinkPage() {
   }
 
   if (status === 'reveal' && data?.assignment) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-muted/30 p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <div className="mx-auto mb-4">
-              <Gift className="h-16 w-16 text-primary" />
-            </div>
-            <CardTitle className="text-2xl">{data.exchange.name}</CardTitle>
-            <CardDescription>
-              Welcome, {data.participant.name}! {isRevealed || data.participant.hasRevealed
-                ? "Here's your Secret Santa match"
-                : "Ready to see who you're shopping for?"}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {isRevealed || data.participant.hasRevealed ? (
+    // If already revealed, show the result without animation
+    if (isRevealed || data.participant.hasRevealed) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-muted/30 p-4">
+          <Card className="w-full max-w-md">
+            <CardHeader className="text-center">
+              <CardTitle className="text-2xl">{data.exchange.name}</CardTitle>
+              <CardDescription>
+                Welcome, {data.participant.name}! Here&apos;s your Secret Santa match
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
               <div className="text-center space-y-4">
                 <div className="py-6 px-4 rounded-lg bg-primary/10 border border-primary/20">
                   <p className="text-sm text-muted-foreground mb-2">You are buying a gift for</p>
@@ -231,21 +228,45 @@ export default function MagicLinkPage() {
                   )}
                 </div>
               </div>
-            ) : (
-              <div className="text-center space-y-4">
-                <Button
-                  size="lg"
-                  className="gap-2 text-lg py-6"
-                  onClick={handleReveal}
-                >
-                  <Eye className="h-5 w-5" />
-                  Reveal My Match
-                </Button>
-                <p className="text-sm text-muted-foreground">
-                  Click to see who you&apos;ll be getting a gift for!
-                </p>
-              </div>
-            )}
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
+
+    // Show the reveal animation
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-muted/30 p-4">
+        <Card className="w-full max-w-md overflow-hidden">
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl">{data.exchange.name}</CardTitle>
+            <CardDescription>
+              Welcome, {data.participant.name}! Ready to see who you&apos;re shopping for?
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <RevealAnimation
+              receiverName={data.assignment.receiver.name}
+              receiverWishlistId={data.assignment.receiver.wishlistId}
+              onReveal={handleReveal}
+              isRevealing={false}
+            />
+            <div className="mt-4 flex flex-col gap-2">
+              {isSignedIn ? (
+                <Link href={`/exchanges/${data.exchange.id}`}>
+                  <Button variant="outline" className="w-full">
+                    Go to Exchange
+                  </Button>
+                </Link>
+              ) : (
+                <SignInButton mode="redirect" forceRedirectUrl={currentUrl}>
+                  <Button variant="outline" className="w-full gap-2">
+                    <LogIn className="h-4 w-4" />
+                    Sign in to manage your wishlist
+                  </Button>
+                </SignInButton>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>

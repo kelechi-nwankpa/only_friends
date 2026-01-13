@@ -76,6 +76,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { RevealAnimation } from '@/components/exchanges/reveal-animation';
 
 export default function ExchangeDetailPage() {
   const params = useParams();
@@ -886,44 +887,22 @@ export default function ExchangeDetailPage() {
 
       {/* Reveal Animation Dialog */}
       <Dialog open={showReveal} onOpenChange={setShowReveal}>
-        <DialogContent className="text-center">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader className="text-center">
             <DialogTitle>Your Secret Santa Match</DialogTitle>
-            <DialogDescription>
-              {isRevealed
-                ? 'Time to start shopping!'
-                : 'Ready to see who you\'re getting a gift for?'}
-            </DialogDescription>
           </DialogHeader>
-          <div className="py-8">
-            {!isRevealed ? (
-              <Button
-                size="lg"
-                className="gap-2"
-                onClick={handleReveal}
-                disabled={revealAssignment.isPending}
-              >
-                <Gift className="h-5 w-5" />
-                Reveal My Match
-              </Button>
-            ) : assignment?.receiver ? (
-              <div className="space-y-4">
-                <Avatar className="h-24 w-24 mx-auto">
-                  <AvatarFallback className="text-3xl">
-                    {assignment.receiver.name?.charAt(0)}
-                  </AvatarFallback>
-                </Avatar>
-                <p className="text-3xl font-bold">{assignment.receiver.name}</p>
-                {assignment.receiver.wishlistId && (
-                  <Link href={`/lists/${assignment.receiver.wishlistId}`}>
-                    <Button>View Their Wishlist</Button>
-                  </Link>
-                )}
-              </div>
-            ) : (
+          {assignment?.receiver ? (
+            <RevealAnimation
+              receiverName={assignment.receiver.name || 'Your Match'}
+              receiverWishlistId={assignment.receiver.wishlistId}
+              onReveal={handleReveal}
+              isRevealing={revealAssignment.isPending}
+            />
+          ) : (
+            <div className="py-8 text-center">
               <p className="text-muted-foreground">Loading...</p>
-            )}
-          </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
