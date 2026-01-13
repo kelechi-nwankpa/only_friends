@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Gift, Users, Lock, Sparkles } from 'lucide-react';
+import { Gift, Users, Lock, Sparkles, Heart } from 'lucide-react';
 
 export default function HomePage() {
   return (
@@ -9,8 +9,8 @@ export default function HomePage() {
       <header className="container mx-auto px-4 py-6">
         <nav className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Gift className="h-8 w-8 text-primary" />
-            <span className="text-xl font-bold">Wishlist</span>
+            <Heart className="h-8 w-8 text-primary fill-primary" />
+            <span className="text-xl font-bold">OnlyFriends</span>
           </div>
           <div className="flex items-center gap-4">
             <Link href="/sign-in">
@@ -27,8 +27,8 @@ export default function HomePage() {
       <main className="container mx-auto px-4 py-20">
         <div className="mx-auto max-w-3xl text-center">
           <h1 className="text-4xl font-bold tracking-tight sm:text-6xl">
-            Gift giving made{' '}
-            <span className="text-primary">simple</span>
+            Gifting for the people{' '}
+            <span className="text-primary">you love</span>
           </h1>
           <p className="mt-6 text-lg text-muted-foreground">
             Create wishlists, coordinate gift exchanges, and make sure everyone
@@ -74,7 +74,7 @@ export default function HomePage() {
             Ready to simplify gift giving?
           </h2>
           <p className="mt-4 text-primary-foreground/80">
-            Join thousands of families and friends who use Wishlist to coordinate gifts.
+            Join thousands of families and friends who use OnlyFriends to coordinate gifts.
           </p>
           <Link href="/sign-up">
             <Button size="lg" variant="secondary" className="mt-8">
@@ -86,7 +86,7 @@ export default function HomePage() {
 
       {/* Footer */}
       <footer className="container mx-auto px-4 py-8 text-center text-sm text-muted-foreground">
-        <p>&copy; {new Date().getFullYear()} Wishlist. Made with care.</p>
+        <p>&copy; {new Date().getFullYear()} OnlyFriends. Made with love.</p>
       </footer>
     </div>
   );

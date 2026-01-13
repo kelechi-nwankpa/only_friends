@@ -1,7 +1,7 @@
 {
-  "name": "wishlist-api",
+  "name": "onlyfriends-api",
   "version": "1.0.0",
-  "description": "Wishlist & Gift Coordination API",
+  "description": "OnlyFriends - Gift Coordination API",
   "main": "dist/index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",

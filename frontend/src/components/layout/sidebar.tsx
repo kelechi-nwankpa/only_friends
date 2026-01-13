@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Gift, Users, Calendar, Settings, Home, Sparkles } from 'lucide-react';
+import { Gift, Users, Calendar, Settings, Home, Sparkles, Heart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navigation = [
@@ -20,8 +20,8 @@ export function Sidebar() {
   return (
     <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:border-r lg:bg-card">
       <div className="flex h-16 items-center gap-2 border-b px-6">
-        <Gift className="h-6 w-6 text-primary" />
-        <span className="font-semibold text-lg">Wishlist</span>
+        <Heart className="h-6 w-6 text-primary fill-primary" />
+        <span className="font-semibold text-lg">OnlyFriends</span>
       </div>
       <nav className="flex-1 px-4 py-4 space-y-1">
         {navigation.map((item) => {

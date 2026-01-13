@@ -8,11 +8,11 @@ import './globals.css';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Wishlist - Gift Coordination Made Simple',
-  description: 'The simplest way to organize wishlists and gift exchanges without ads or friction.',
+  title: 'OnlyFriends - Gifting for the People You Love',
+  description: 'The simplest way to organize wishlists and gift exchanges with your friends and family. No ads, no friction.',
   openGraph: {
-    title: 'Wishlist - Gift Coordination Made Simple',
-    description: 'The simplest way to organize wishlists and gift exchanges without ads or friction.',
+    title: 'OnlyFriends - Gifting for the People You Love',
+    description: 'The simplest way to organize wishlists and gift exchanges with your friends and family. No ads, no friction.',
     type: 'website',
   },
 };
