@@ -165,6 +165,30 @@ export function useRemoveParticipant() {
   });
 }
 
+export function useUpdateParticipant() {
+  const queryClient = useQueryClient();
+  const { getToken } = useAuth();
+
+  return useMutation({
+    mutationFn: async ({
+      exchangeId,
+      participantId,
+      data,
+    }: {
+      exchangeId: string;
+      participantId: string;
+      data: { name?: string; wishlistId?: string | null };
+    }) => {
+      const token = await getToken();
+      api.setToken(token);
+      return api.updateParticipant(exchangeId, participantId, data);
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['exchanges', variables.exchangeId] });
+    },
+  });
+}
+
 export function useExclusions(exchangeId: string) {
   const { getToken } = useAuth();
 

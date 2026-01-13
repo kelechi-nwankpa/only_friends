@@ -134,6 +134,14 @@ export interface Exchange {
   group?: { id: string; name: string };
   createdById?: string;
   createdBy?: User;
+  isOrganizer?: boolean;
+  myParticipant?: {
+    id: string;
+    name: string;
+    hasWishlist: boolean;
+    wishlistId?: string;
+    wishlistTitle?: string;
+  };
   participants?: ExchangeParticipant[];
   exclusions?: ExchangeExclusion[];
   exclusionCount?: number;

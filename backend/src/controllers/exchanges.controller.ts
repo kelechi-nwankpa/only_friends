@@ -86,7 +86,7 @@ export const createExchange: RequestHandler = async (req, res, next) => {
 export const getExchange: RequestHandler = async (req, res, next) => {
   try {
     const authReq = req as AuthenticatedRequest | MagicLinkAuthRequest;
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
 
     const exchange = await prisma.exchange.findUnique({
       where: { id },
@@ -123,6 +123,11 @@ export const getExchange: RequestHandler = async (req, res, next) => {
       throw AppError.forbidden('You are not a participant in this exchange');
     }
 
+    // Find current user's participant record
+    const myParticipant = exchange.participants.find(
+      p => p.userId === userId || (magicLink && p.id === magicLink.participant.id)
+    );
+
     res.json({
       success: true,
       data: {
@@ -140,7 +145,15 @@ export const getExchange: RequestHandler = async (req, res, next) => {
           exchange: exchange.exchangeDate,
         },
         isIncognito: exchange.isIncognito,
+        isOrganizer: exchange.createdBy === userId,
         group: exchange.group,
+        myParticipant: myParticipant ? {
+          id: myParticipant.id,
+          name: myParticipant.name,
+          hasWishlist: !!myParticipant.wishlistId,
+          wishlistId: myParticipant.wishlistId,
+          wishlistTitle: myParticipant.wishlist?.title,
+        } : null,
         participants: exchange.participants.map(p => ({
           id: p.id,
           name: p.name,
@@ -313,27 +326,72 @@ export const addParticipant: RequestHandler = async (req, res, next) => {
 
 /**
  * Update a participant
+ * - Organizers can update name, email, phone
+ * - Participants can only update their own wishlistId
  */
 export const updateParticipant: RequestHandler = async (req, res, next) => {
   try {
     const { user } = req as AuthenticatedRequest;
-    const { id, participantId } = req.params;
+    const { id, participantId } = req.params as { id: string; participantId: string };
     const { name, email, phone, wishlistId } = req.body;
 
     const exchange = await prisma.exchange.findUnique({ where: { id } });
 
-    if (!exchange || exchange.createdBy !== user.id) {
-      throw AppError.forbidden('Only the organizer can update participants');
+    if (!exchange) {
+      throw AppError.notFound('Exchange not found');
+    }
+
+    const isOrganizer = exchange.createdBy === user.id;
+
+    // Get the participant to check ownership
+    const participant = await prisma.exchangeParticipant.findUnique({
+      where: { id: participantId },
+    });
+
+    if (!participant) {
+      throw AppError.notFound('Participant not found');
+    }
+
+    const isOwnParticipant = participant.userId === user.id;
+
+    // Authorization checks
+    if (!isOrganizer && !isOwnParticipant) {
+      throw AppError.forbidden('You can only update your own participation');
+    }
+
+    // Build update data based on permissions
+    const updateData: { name?: string; email?: string | null; phone?: string | null; wishlistId?: string | null } = {};
+
+    // Organizers can update name, email, phone
+    if (isOrganizer) {
+      if (name) updateData.name = name;
+      if (email !== undefined) updateData.email = email;
+      if (phone !== undefined) updateData.phone = phone;
+    }
+
+    // Both organizers and participants can update wishlistId (but only their own for participants)
+    if (wishlistId !== undefined) {
+      if (isOwnParticipant || isOrganizer) {
+        // Verify the wishlist belongs to the participant's linked user
+        if (wishlistId !== null) {
+          const wishlist = await prisma.wishlist.findUnique({
+            where: { id: wishlistId },
+          });
+
+          // For self-linking, verify the wishlist belongs to the current user
+          if (isOwnParticipant && !isOrganizer) {
+            if (!wishlist || wishlist.ownerId !== user.id) {
+              throw AppError.forbidden('You can only link your own wishlists');
+            }
+          }
+        }
+        updateData.wishlistId = wishlistId;
+      }
     }
 
     const updated = await prisma.exchangeParticipant.update({
       where: { id: participantId },
-      data: {
-        ...(name && { name }),
-        ...(email !== undefined && { email }),
-        ...(phone !== undefined && { phone }),
-        ...(wishlistId !== undefined && { wishlistId }),
-      },
+      data: updateData,
     });
 
     res.json({ success: true, data: updated });

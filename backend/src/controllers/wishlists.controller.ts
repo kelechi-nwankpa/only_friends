@@ -569,5 +569,23 @@ async function checkWishlistAccess(wishlistId: string, userId: string): Promise<
     if (membership) return true;
   }
 
+  // Check exchange-based access:
+  // If the user is assigned to buy a gift for someone who linked this wishlist
+  const exchangeAccess = await prisma.exchangeAssignment.findFirst({
+    where: {
+      giver: {
+        userId: userId, // Current user is the giver
+      },
+      receiver: {
+        wishlistId: wishlistId, // Receiver has this wishlist linked
+      },
+      exchange: {
+        status: 'drawn', // Only allow access after names are drawn
+      },
+    },
+  });
+
+  if (exchangeAccess) return true;
+
   return false;
 }

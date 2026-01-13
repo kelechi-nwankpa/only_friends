@@ -261,6 +261,16 @@ class ApiClient {
     );
   }
 
+  async updateParticipant(exchangeId: string, participantId: string, data: { name?: string; wishlistId?: string | null }) {
+    return this.request<{ success: boolean; data: import('@/types').ExchangeParticipant }>(
+      `/exchanges/${exchangeId}/participants/${participantId}`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      }
+    );
+  }
+
   async getExclusions(exchangeId: string) {
     return this.request<{ success: boolean; data: { exclusions: Array<{ id: string; participantA: { id: string; name: string }; participantB: { id: string; name: string }; reason?: string }> } }>(
       `/exchanges/${exchangeId}/exclusions`

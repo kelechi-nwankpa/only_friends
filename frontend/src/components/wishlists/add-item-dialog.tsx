@@ -171,6 +171,16 @@ export function AddItemDialog({ open, onOpenChange, wishlistId }: AddItemDialogP
           </div>
 
           <div className="space-y-2">
+            <Label htmlFor="productUrl">Product URL</Label>
+            <Input
+              id="productUrl"
+              placeholder="https://..."
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="notes">Notes</Label>
             <Textarea
               id="notes"

@@ -17,6 +17,8 @@ import {
   Eye,
   Copy,
   Check,
+  List,
+  Unlink,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -58,11 +60,13 @@ import {
   useMyAssignment,
   useAddParticipant,
   useRemoveParticipant,
+  useUpdateParticipant,
   useExclusions,
   useAddExclusion,
   useRemoveExclusion,
   useRevealAssignment,
 } from '@/hooks/use-exchanges';
+import { useWishlists } from '@/hooks/use-wishlists';
 import { useToast } from '@/components/ui/use-toast';
 import { formatDate, formatCurrency } from '@/lib/utils';
 import {
@@ -82,10 +86,12 @@ export default function ExchangeDetailPage() {
   const { data: exchange, isLoading, error } = useExchange(id);
   const { data: assignment } = useMyAssignment(id);
   const { data: exclusions } = useExclusions(id);
+  const { data: wishlists } = useWishlists();
   const drawNames = useDrawNames();
   const deleteExchange = useDeleteExchange();
   const addParticipant = useAddParticipant();
   const removeParticipant = useRemoveParticipant();
+  const updateParticipant = useUpdateParticipant();
   const addExclusion = useAddExclusion();
   const removeExclusion = useRemoveExclusion();
   const revealAssignment = useRevealAssignment();
@@ -97,6 +103,8 @@ export default function ExchangeDetailPage() {
   const [showReveal, setShowReveal] = useState(false);
   const [isRevealed, setIsRevealed] = useState(false);
   const [copiedLink, setCopiedLink] = useState<string | null>(null);
+  const [showLinkWishlist, setShowLinkWishlist] = useState(false);
+  const [selectedWishlistId, setSelectedWishlistId] = useState<string>('');
 
   // Add participant form state
   const [newParticipantName, setNewParticipantName] = useState('');
@@ -256,6 +264,64 @@ export default function ExchangeDetailPage() {
     toast({ title: 'Link copied!', description: `Invite link for ${participantName} copied to clipboard` });
   };
 
+  const openLinkMyWishlistDialog = () => {
+    setSelectedWishlistId(exchange?.myParticipant?.wishlistId || '');
+    setShowLinkWishlist(true);
+  };
+
+  const handleLinkMyWishlist = async () => {
+    if (!exchange?.myParticipant || !selectedWishlistId) {
+      toast({
+        title: 'Error',
+        description: 'Please select a wishlist',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      await updateParticipant.mutateAsync({
+        exchangeId: id,
+        participantId: exchange.myParticipant.id,
+        data: { wishlistId: selectedWishlistId },
+      });
+      toast({
+        title: 'Wishlist linked',
+        description: 'Your wishlist has been shared with the group',
+      });
+      setShowLinkWishlist(false);
+      setSelectedWishlistId('');
+    } catch {
+      toast({
+        title: 'Error',
+        description: 'Failed to link wishlist',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleUnlinkMyWishlist = async () => {
+    if (!exchange?.myParticipant) return;
+
+    try {
+      await updateParticipant.mutateAsync({
+        exchangeId: id,
+        participantId: exchange.myParticipant.id,
+        data: { wishlistId: null },
+      });
+      toast({
+        title: 'Wishlist unlinked',
+        description: 'Your wishlist has been removed from this exchange',
+      });
+    } catch {
+      toast({
+        title: 'Error',
+        description: 'Failed to unlink wishlist',
+        variant: 'destructive',
+      });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -285,7 +351,7 @@ export default function ExchangeDetailPage() {
     );
   }
 
-  const isOrganizer = true; // TODO: Check if current user is the organizer
+  const isOrganizer = exchange.isOrganizer ?? false;
   const canDraw = exchange.status === 'open' && (exchange.participants?.length || 0) >= 2;
   const namesDrawn = exchange.status === 'drawn' || exchange.status === 'completed';
 
@@ -441,6 +507,54 @@ export default function ExchangeDetailPage() {
                 <Eye className="h-4 w-4 mr-2" />
                 Click to Reveal
               </Button>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* My Wishlist - for participants to share their wishlist */}
+      {exchange.myParticipant && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <List className="h-5 w-5" />
+              My Wishlist
+            </CardTitle>
+            <CardDescription>
+              Share your wishlist so your Secret Santa knows what to get you
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {exchange.myParticipant.hasWishlist ? (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Badge variant="secondary">Linked</Badge>
+                  <span className="font-medium">{exchange.myParticipant.wishlistTitle}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Link href={`/lists/${exchange.myParticipant.wishlistId}`}>
+                    <Button variant="outline" size="sm">
+                      View
+                    </Button>
+                  </Link>
+                  <Button variant="outline" size="sm" onClick={openLinkMyWishlistDialog}>
+                    Change
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={handleUnlinkMyWishlist}>
+                    <Unlink className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                <p className="text-sm text-muted-foreground">
+                  No wishlist linked yet. Share one so your Secret Santa knows what gifts you&apos;d love!
+                </p>
+                <Button onClick={openLinkMyWishlistDialog} className="gap-2">
+                  <List className="h-4 w-4" />
+                  Link Wishlist
+                </Button>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -810,6 +924,60 @@ export default function ExchangeDetailPage() {
               <p className="text-muted-foreground">Loading...</p>
             )}
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Link My Wishlist Dialog */}
+      <Dialog open={showLinkWishlist} onOpenChange={setShowLinkWishlist}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Link Your Wishlist</DialogTitle>
+            <DialogDescription>
+              Select a wishlist to share with the group. Your Secret Santa will be able to see it.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Select Wishlist</Label>
+              <Select value={selectedWishlistId} onValueChange={setSelectedWishlistId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose a wishlist" />
+                </SelectTrigger>
+                <SelectContent>
+                  {wishlists && wishlists.length > 0 ? (
+                    wishlists.map((wishlist) => (
+                      <SelectItem key={wishlist.id} value={wishlist.id}>
+                        {wishlist.title}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="none" disabled>
+                      No wishlists available
+                    </SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+              {wishlists && wishlists.length === 0 && (
+                <p className="text-xs text-muted-foreground">
+                  You don&apos;t have any wishlists yet.{' '}
+                  <Link href="/lists/new" className="text-primary hover:underline">
+                    Create one first
+                  </Link>
+                </p>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowLinkWishlist(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleLinkMyWishlist}
+              disabled={!selectedWishlistId || updateParticipant.isPending}
+            >
+              {updateParticipant.isPending ? 'Linking...' : 'Link Wishlist'}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
