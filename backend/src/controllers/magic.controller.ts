@@ -9,7 +9,7 @@ import type { AuthenticatedRequest } from '../types/auth.types.js';
  */
 export const validateMagicLink: RequestHandler = async (req, res, next) => {
   try {
-    const { token } = req.params;
+    const { token } = req.params as { token: string };
 
     const magicLink = await prisma.magicLinkToken.findUnique({
       where: { token },
@@ -114,7 +114,7 @@ export const validateMagicLink: RequestHandler = async (req, res, next) => {
 export const claimMagicLink: RequestHandler = async (req, res, next) => {
   try {
     const { user } = req as AuthenticatedRequest;
-    const { token } = req.params;
+    const { token } = req.params as { token: string };
 
     const magicLink = await prisma.magicLinkToken.findUnique({
       where: { token },

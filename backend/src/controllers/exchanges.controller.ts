@@ -179,7 +179,7 @@ export const getExchange: RequestHandler = async (req, res, next) => {
 export const updateExchange: RequestHandler = async (req, res, next) => {
   try {
     const { user } = req as AuthenticatedRequest;
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
     const input = req.body as UpdateExchangeInput;
 
     const exchange = await prisma.exchange.findUnique({ where: { id } });
@@ -222,7 +222,7 @@ export const updateExchange: RequestHandler = async (req, res, next) => {
 export const deleteExchange: RequestHandler = async (req, res, next) => {
   try {
     const { user } = req as AuthenticatedRequest;
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
 
     const exchange = await prisma.exchange.findUnique({ where: { id } });
 
@@ -247,7 +247,7 @@ export const deleteExchange: RequestHandler = async (req, res, next) => {
  */
 export const getParticipants: RequestHandler = async (req, res, next) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
 
     const participants = await prisma.exchangeParticipant.findMany({
       where: { exchangeId: id },
@@ -272,7 +272,7 @@ export const getParticipants: RequestHandler = async (req, res, next) => {
 export const addParticipant: RequestHandler = async (req, res, next) => {
   try {
     const { user } = req as AuthenticatedRequest;
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
     const input = req.body as AddParticipantInput;
 
     const exchange = await prisma.exchange.findUnique({ where: { id } });
@@ -406,7 +406,7 @@ export const updateParticipant: RequestHandler = async (req, res, next) => {
 export const removeParticipant: RequestHandler = async (req, res, next) => {
   try {
     const { user } = req as AuthenticatedRequest;
-    const { id, participantId } = req.params;
+    const { id, participantId } = req.params as { id: string; participantId: string };
 
     const exchange = await prisma.exchange.findUnique({ where: { id } });
 
@@ -432,7 +432,7 @@ export const removeParticipant: RequestHandler = async (req, res, next) => {
 export const sendInvites: RequestHandler = async (req, res, next) => {
   try {
     const { user } = req as AuthenticatedRequest;
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
     const { method, participantIds } = req.body;
 
     const exchange = await prisma.exchange.findUnique({ where: { id } });
@@ -478,7 +478,7 @@ export const sendInvites: RequestHandler = async (req, res, next) => {
 export const getExclusions: RequestHandler = async (req, res, next) => {
   try {
     const { user } = req as AuthenticatedRequest;
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
 
     const exchange = await prisma.exchange.findUnique({ where: { id } });
 
@@ -516,7 +516,7 @@ export const getExclusions: RequestHandler = async (req, res, next) => {
 export const addExclusion: RequestHandler = async (req, res, next) => {
   try {
     const { user } = req as AuthenticatedRequest;
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
     const { participantAId, participantBId, reason } = req.body;
 
     const exchange = await prisma.exchange.findUnique({ where: { id } });
@@ -550,7 +550,7 @@ export const addExclusion: RequestHandler = async (req, res, next) => {
 export const removeExclusion: RequestHandler = async (req, res, next) => {
   try {
     const { user } = req as AuthenticatedRequest;
-    const { id, exclusionId } = req.params;
+    const { id, exclusionId } = req.params as { id: string; exclusionId: string };
 
     const exchange = await prisma.exchange.findUnique({ where: { id } });
 
@@ -572,7 +572,7 @@ export const removeExclusion: RequestHandler = async (req, res, next) => {
 export const drawNames: RequestHandler = async (req, res, next) => {
   try {
     const { user } = req as AuthenticatedRequest;
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
 
     const exchange = await prisma.exchange.findUnique({
       where: { id },
@@ -648,7 +648,7 @@ export const drawNames: RequestHandler = async (req, res, next) => {
 export const redrawNames: RequestHandler = async (req, res, next) => {
   try {
     const { user } = req as AuthenticatedRequest;
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
 
     const exchange = await prisma.exchange.findUnique({ where: { id } });
 
@@ -684,7 +684,7 @@ export const redrawNames: RequestHandler = async (req, res, next) => {
 export const getMyAssignment: RequestHandler = async (req, res, next) => {
   try {
     const authReq = req as AuthenticatedRequest | MagicLinkAuthRequest;
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
 
     const userId = authReq.user?.id;
     const magicLink = (authReq as MagicLinkAuthRequest).magicLink;
@@ -752,7 +752,7 @@ export const getMyAssignment: RequestHandler = async (req, res, next) => {
 export const revealAssignment: RequestHandler = async (req, res, next) => {
   try {
     const authReq = req as AuthenticatedRequest | MagicLinkAuthRequest;
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
 
     const userId = authReq.user?.id;
     const magicLink = (authReq as MagicLinkAuthRequest).magicLink;
@@ -779,7 +779,7 @@ export const revealAssignment: RequestHandler = async (req, res, next) => {
  */
 export const getMessages: RequestHandler = async (req, res, next) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
 
     const messages = await prisma.chatMessage.findMany({
       where: { exchangeId: id },
@@ -805,7 +805,7 @@ export const getMessages: RequestHandler = async (req, res, next) => {
 export const sendMessage: RequestHandler = async (req, res, next) => {
   try {
     const { user } = req as AuthenticatedRequest;
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
     const { message } = req.body;
 
     if (!user) {

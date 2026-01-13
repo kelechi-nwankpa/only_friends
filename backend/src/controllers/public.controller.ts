@@ -9,7 +9,7 @@ import { AppError } from '../utils/errors.js';
  */
 export const getPublicWishlist: RequestHandler = async (req, res, next) => {
   try {
-    const { slug } = req.params;
+    const { slug } = req.params as { slug: string };
     const { user } = req as OptionalAuthRequest;
 
     const wishlist = await prisma.wishlist.findUnique({

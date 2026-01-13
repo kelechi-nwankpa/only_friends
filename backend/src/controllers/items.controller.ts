@@ -10,7 +10,7 @@ import type { UpdateItemInput } from '../validators/wishlist.validator.js';
 export const getItem: RequestHandler = async (req, res, next) => {
   try {
     const { user } = req as AuthenticatedRequest;
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
 
     const item = await prisma.wishlistItem.findUnique({
       where: { id },
@@ -56,7 +56,7 @@ export const getItem: RequestHandler = async (req, res, next) => {
 export const updateItem: RequestHandler = async (req, res, next) => {
   try {
     const { user } = req as AuthenticatedRequest;
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
     const input = req.body as UpdateItemInput;
 
     const item = await prisma.wishlistItem.findUnique({
@@ -97,7 +97,7 @@ export const updateItem: RequestHandler = async (req, res, next) => {
 export const deleteItem: RequestHandler = async (req, res, next) => {
   try {
     const { user } = req as AuthenticatedRequest;
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
 
     const item = await prisma.wishlistItem.findUnique({
       where: { id },
@@ -127,7 +127,7 @@ export const deleteItem: RequestHandler = async (req, res, next) => {
 export const reserveItem: RequestHandler = async (req, res, next) => {
   try {
     const { user } = req as AuthenticatedRequest;
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
 
     const item = await prisma.wishlistItem.findUnique({
       where: { id },
@@ -177,7 +177,7 @@ export const reserveItem: RequestHandler = async (req, res, next) => {
 export const releaseReservation: RequestHandler = async (req, res, next) => {
   try {
     const { user } = req as AuthenticatedRequest;
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
 
     const reservation = await prisma.reservation.findUnique({
       where: { itemId: id },
@@ -205,7 +205,7 @@ export const releaseReservation: RequestHandler = async (req, res, next) => {
 export const updateReservation: RequestHandler = async (req, res, next) => {
   try {
     const { user } = req as AuthenticatedRequest;
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
     const { status, notes } = req.body;
 
     const reservation = await prisma.reservation.findUnique({
@@ -240,7 +240,7 @@ export const updateReservation: RequestHandler = async (req, res, next) => {
 export const enablePriceAlert: RequestHandler = async (req, res, next) => {
   try {
     const { user } = req as AuthenticatedRequest;
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
     const { targetPrice } = req.body;
 
     const item = await prisma.wishlistItem.findUnique({ where: { id } });
@@ -279,7 +279,7 @@ export const enablePriceAlert: RequestHandler = async (req, res, next) => {
 export const disablePriceAlert: RequestHandler = async (req, res, next) => {
   try {
     const { user } = req as AuthenticatedRequest;
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
 
     await prisma.priceAlert.delete({
       where: { userId_itemId: { userId: user.id, itemId: id } },
@@ -298,7 +298,7 @@ export const disablePriceAlert: RequestHandler = async (req, res, next) => {
  */
 export const getPriceHistory: RequestHandler = async (req, res, next) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
 
     const history = await prisma.priceHistory.findMany({
       where: { itemId: id },

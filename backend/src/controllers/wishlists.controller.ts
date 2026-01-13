@@ -81,7 +81,7 @@ export const createWishlist: RequestHandler = async (req, res, next) => {
 export const getWishlist: RequestHandler = async (req, res, next) => {
   try {
     const { user } = req as AuthenticatedRequest;
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
 
     const wishlist = await prisma.wishlist.findUnique({
       where: { id },
@@ -162,7 +162,7 @@ export const getWishlist: RequestHandler = async (req, res, next) => {
 export const updateWishlist: RequestHandler = async (req, res, next) => {
   try {
     const { user } = req as AuthenticatedRequest;
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
     const input = req.body as UpdateWishlistInput;
 
     const wishlist = await prisma.wishlist.findUnique({ where: { id } });
@@ -197,7 +197,7 @@ export const updateWishlist: RequestHandler = async (req, res, next) => {
 export const deleteWishlist: RequestHandler = async (req, res, next) => {
   try {
     const { user } = req as AuthenticatedRequest;
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
 
     const wishlist = await prisma.wishlist.findUnique({ where: { id } });
 
@@ -223,7 +223,7 @@ export const deleteWishlist: RequestHandler = async (req, res, next) => {
 export const archiveWishlist: RequestHandler = async (req, res, next) => {
   try {
     const { user } = req as AuthenticatedRequest;
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
 
     const wishlist = await prisma.wishlist.findUnique({ where: { id } });
 
@@ -252,7 +252,7 @@ export const archiveWishlist: RequestHandler = async (req, res, next) => {
 export const generateShareLink: RequestHandler = async (req, res, next) => {
   try {
     const { user } = req as AuthenticatedRequest;
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
 
     const wishlist = await prisma.wishlist.findUnique({ where: { id } });
 
@@ -289,7 +289,7 @@ export const generateShareLink: RequestHandler = async (req, res, next) => {
 export const revokeShareLink: RequestHandler = async (req, res, next) => {
   try {
     const { user } = req as AuthenticatedRequest;
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
 
     const wishlist = await prisma.wishlist.findUnique({ where: { id } });
 
@@ -318,8 +318,8 @@ export const revokeShareLink: RequestHandler = async (req, res, next) => {
 export const shareWithGroup: RequestHandler = async (req, res, next) => {
   try {
     const { user } = req as AuthenticatedRequest;
-    const { id } = req.params;
-    const { groupId } = req.body;
+    const { id } = req.params as { id: string };
+    const { groupId } = req.body as { groupId: string };
 
     const wishlist = await prisma.wishlist.findUnique({ where: { id } });
 
@@ -354,7 +354,7 @@ export const shareWithGroup: RequestHandler = async (req, res, next) => {
 export const unshareWithGroup: RequestHandler = async (req, res, next) => {
   try {
     const { user } = req as AuthenticatedRequest;
-    const { id, groupId } = req.params;
+    const { id, groupId } = req.params as { id: string; groupId: string };
 
     const wishlist = await prisma.wishlist.findUnique({ where: { id } });
 
@@ -380,8 +380,8 @@ export const unshareWithGroup: RequestHandler = async (req, res, next) => {
 export const shareWithUser: RequestHandler = async (req, res, next) => {
   try {
     const { user } = req as AuthenticatedRequest;
-    const { id } = req.params;
-    const { userId } = req.body;
+    const { id } = req.params as { id: string };
+    const { userId: targetUserId } = req.body as { userId: string };
 
     const wishlist = await prisma.wishlist.findUnique({ where: { id } });
 
@@ -389,14 +389,14 @@ export const shareWithUser: RequestHandler = async (req, res, next) => {
       throw AppError.forbidden('You can only share your own wishlists');
     }
 
-    if (userId === user.id) {
+    if (targetUserId === user.id) {
       throw AppError.badRequest('You cannot share a wishlist with yourself');
     }
 
     await prisma.wishlistUserShare.create({
       data: {
         wishlistId: id,
-        userId,
+        userId: targetUserId,
         sharedBy: user.id,
       },
     }).catch(() => {
@@ -415,7 +415,7 @@ export const shareWithUser: RequestHandler = async (req, res, next) => {
 export const unshareWithUser: RequestHandler = async (req, res, next) => {
   try {
     const { user } = req as AuthenticatedRequest;
-    const { id, userId } = req.params;
+    const { id, userId: targetUserId } = req.params as { id: string; userId: string };
 
     const wishlist = await prisma.wishlist.findUnique({ where: { id } });
 
@@ -424,7 +424,7 @@ export const unshareWithUser: RequestHandler = async (req, res, next) => {
     }
 
     await prisma.wishlistUserShare.delete({
-      where: { wishlistId_userId: { wishlistId: id, userId } },
+      where: { wishlistId_userId: { wishlistId: id, userId: targetUserId } },
     }).catch(() => {
       // Not shared, ignore
     });
@@ -441,7 +441,7 @@ export const unshareWithUser: RequestHandler = async (req, res, next) => {
 export const getShares: RequestHandler = async (req, res, next) => {
   try {
     const { user } = req as AuthenticatedRequest;
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
 
     const wishlist = await prisma.wishlist.findUnique({
       where: { id },
@@ -462,8 +462,8 @@ export const getShares: RequestHandler = async (req, res, next) => {
     res.json({
       success: true,
       data: {
-        groups: wishlist.groupShares.map(s => s.group),
-        users: wishlist.userShares.map(s => s.user),
+        groups: wishlist.groupShares.map((s: { group: { id: string; name: string } }) => s.group),
+        users: wishlist.userShares.map((s: { user: { id: string; name: string; email: string | null } }) => s.user),
         shareLink: wishlist.shareSlug ? {
           slug: wishlist.shareSlug,
           url: `${process.env.FRONTEND_URL}/list/${wishlist.shareSlug}`,
@@ -481,7 +481,7 @@ export const getShares: RequestHandler = async (req, res, next) => {
 export const addItem: RequestHandler = async (req, res, next) => {
   try {
     const { user } = req as AuthenticatedRequest;
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
     const input = req.body as CreateItemInput;
 
     const wishlist = await prisma.wishlist.findUnique({ where: { id } });
@@ -506,7 +506,7 @@ export const addItem: RequestHandler = async (req, res, next) => {
         currency: input.currency,
         notes: input.notes,
         priority: input.priority,
-        position: (maxPosition._max.position ?? -1) + 1,
+        position: (maxPosition._max?.position ?? -1) + 1,
       },
     });
 
@@ -522,7 +522,7 @@ export const addItem: RequestHandler = async (req, res, next) => {
 export const reorderItems: RequestHandler = async (req, res, next) => {
   try {
     const { user } = req as AuthenticatedRequest;
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
     const { items } = req.body;
 
     const wishlist = await prisma.wishlist.findUnique({ where: { id } });

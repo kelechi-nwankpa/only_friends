@@ -77,7 +77,7 @@ export const createGroup: RequestHandler = async (req, res, next) => {
 export const getGroup: RequestHandler = async (req, res, next) => {
   try {
     const { user } = req as AuthenticatedRequest;
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
 
     // Check membership
     const membership = await prisma.groupMember.findUnique({
@@ -133,7 +133,7 @@ export const getGroup: RequestHandler = async (req, res, next) => {
 export const updateGroup: RequestHandler = async (req, res, next) => {
   try {
     const { user } = req as AuthenticatedRequest;
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
     const input = req.body as UpdateGroupInput;
 
     // Check admin role
@@ -166,7 +166,7 @@ export const updateGroup: RequestHandler = async (req, res, next) => {
 export const deleteGroup: RequestHandler = async (req, res, next) => {
   try {
     const { user } = req as AuthenticatedRequest;
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
 
     const group = await prisma.group.findUnique({ where: { id } });
 
@@ -192,7 +192,7 @@ export const deleteGroup: RequestHandler = async (req, res, next) => {
 export const generateInviteCode: RequestHandler = async (req, res, next) => {
   try {
     const { user } = req as AuthenticatedRequest;
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
 
     const membership = await prisma.groupMember.findUnique({
       where: { groupId_userId: { groupId: id, userId: user.id } },
@@ -224,7 +224,7 @@ export const generateInviteCode: RequestHandler = async (req, res, next) => {
 export const joinGroup: RequestHandler = async (req, res, next) => {
   try {
     const { user } = req as AuthenticatedRequest;
-    const { code } = req.params;
+    const { code } = req.params as { code: string };
 
     const group = await prisma.group.findUnique({
       where: { inviteCode: code },
@@ -279,7 +279,7 @@ export const joinGroup: RequestHandler = async (req, res, next) => {
 export const getMembers: RequestHandler = async (req, res, next) => {
   try {
     const { user } = req as AuthenticatedRequest;
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
 
     const membership = await prisma.groupMember.findUnique({
       where: { groupId_userId: { groupId: id, userId: user.id } },
@@ -317,7 +317,7 @@ export const getMembers: RequestHandler = async (req, res, next) => {
 export const removeMember: RequestHandler = async (req, res, next) => {
   try {
     const { user } = req as AuthenticatedRequest;
-    const { id, userId } = req.params;
+    const { id, userId: targetUserId } = req.params as { id: string; userId: string };
 
     const membership = await prisma.groupMember.findUnique({
       where: { groupId_userId: { groupId: id, userId: user.id } },
@@ -327,12 +327,12 @@ export const removeMember: RequestHandler = async (req, res, next) => {
       throw AppError.forbidden('Only admins can remove members');
     }
 
-    if (userId === user.id) {
+    if (targetUserId === user.id) {
       throw AppError.badRequest('You cannot remove yourself');
     }
 
     await prisma.groupMember.delete({
-      where: { groupId_userId: { groupId: id, userId } },
+      where: { groupId_userId: { groupId: id, userId: targetUserId } },
     });
 
     res.json({ success: true });
@@ -347,7 +347,7 @@ export const removeMember: RequestHandler = async (req, res, next) => {
 export const getGroupWishlists: RequestHandler = async (req, res, next) => {
   try {
     const { user } = req as AuthenticatedRequest;
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
 
     const membership = await prisma.groupMember.findUnique({
       where: { groupId_userId: { groupId: id, userId: user.id } },
