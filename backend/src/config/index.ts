@@ -59,7 +59,8 @@ export function validateConfig(): void {
   ];
 
   if (config.isProd) {
-    required.push('CLERK_WEBHOOK_SECRET', 'OPENAI_API_KEY', 'RESEND_API_KEY');
+    required.push('CLERK_WEBHOOK_SECRET');
+    // OPENAI_API_KEY and RESEND_API_KEY are optional - features will be disabled if not set
   }
 
   const missing = required.filter((key) => !process.env[key]);
